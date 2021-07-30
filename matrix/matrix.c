@@ -72,6 +72,21 @@ void get_row_matrix(matrix_t * M, long row, double * data) {
 	}
 }
 
+void set_col_matrix(matrix_t * M, long col, double * data) {
+    if (M) {
+        for(long i = 0; i < M->row; i++) {
+            set_matrix(M, col, i, data[i]);
+        }
+    }
+}
+
+void set_row_matrix(matrix_t * M, long row, double * data) {
+    if (M) {
+        for(long j = 0; j < M->col; j++) {
+            set_matrix(M, j, row, data[j]);
+        }
+    }
+}
 double determinate(matrix_t * M) {
 	
 	if (M && M->col == M->row) {
