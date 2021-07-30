@@ -149,8 +149,8 @@ matrix_t * mult_matrix(matrix_t * A, matrix_t * B) {
 		for(long i = 0; i < rtn->row; i++) {
 			for(long j = 0; j < rtn->col; j++) {
 				
-				double c[l]; get_col_matrix(A, i, c);
-				double r[l]; get_row_matrix(B, j, r);
+				double c[l]; get_col_matrix(A, j, c);
+				double r[l]; get_row_matrix(B, i, r);
 				
 				double sum = 0.0;
 				for(long k = 0; k < l; k++) {
@@ -189,12 +189,7 @@ matrix_t * inverse_matrix(matrix_t * M) {
 			}
 		}
 		
-		printf("CoFactors\n");
-		print_matrix(CoFactor);
-		
 		double deter = determinate(M);
-		
-		printf("Determinate: % 6.3f\n", deter);
 		
 		if (deter == 0.0) {
 			printf("Singularity!\n");
