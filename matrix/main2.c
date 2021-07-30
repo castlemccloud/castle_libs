@@ -6,7 +6,7 @@
 #include "matrix.h"
 float fun(float a, float b, float c){
 
-    return 136 + 53*a + 143*b + 161*c + 132*a*b + 149*a*c + 3*b*c;
+    return 136 + 53*a + 143*b +  132*a*b + 161*c + 149*a*c + 3*b*c + 0 *a*b*c;
 
 }
 
@@ -15,7 +15,7 @@ int main(void)
 	
 	srand(1234567890);
 
-    int numSamples = 5;
+    int numSamples = 8;
 
     int numFactors = 3;
 	
@@ -34,6 +34,18 @@ int main(void)
     }
 	printf("x\n");
     print_matrix(x);
+	
+	matrix_t* Y = make_matrix(1,numSamples);
+
+    for(int i = 0; i< numSamples; i++){
+
+        Y->data[i] = fun(x->data[i*x->col + 0],x->data[i*x->col + 1],x->data[i*x->col + 2]);
+
+        // set_matrix(Y, 0, i,  (rand() % 1000) / 500.0f - 1.0f);
+
+    }
+	printf("Y\n");
+    print_matrix(Y);
 	
 	matrix_t* X = make_matrix(numPower, numSamples);
 	for(int i = 0; i < numSamples; i++){
@@ -54,40 +66,16 @@ int main(void)
         }
 
     }
-	printf("X\n");
-	print_matrix(X);
-	
-    matrix_t* Y = make_matrix(1,numSamples);
-
-    for(int i = 0; i< numSamples; i++){
-
-        Y->data[i] = fun(X->data[i*X->col + 0],X->data[i*X->col + 1],X->data[i*X->col + 2]);
-
-        // set_matrix(Y, 0, i,  (rand() % 1000) / 500.0f - 1.0f);
-
-    }
-	printf("Y\n");
-    print_matrix(Y);
-
-   
 
     matrix_t* XT = transpose_matrix(X);
-	printf("XT\n");
-    print_matrix(XT);
 
-    matrix_t* temp = mult_matrix(XT,X);
-	printf("temp\n");
-    print_matrix(temp);
+    matrix_t* temp = mult_matrix(X,XT);
 
     matrix_t* Xi = inverse_matrix(temp);
-	printf("Xi\n");
-    print_matrix(Xi);
 
     matrix_t* temp2 = mult_matrix(Y,XT);
-	printf("temp2\n");
-    print_matrix(temp2);
 
-    matrix_t* B = mult_matrix(Xi,temp2);
+    matrix_t* B = mult_matrix(temp2, Xi);
 	printf("B\n");
     print_matrix(B);
 	
