@@ -91,6 +91,7 @@ double determinate(matrix_t * M) {
 	
 	if (M && M->col == M->row) {
 		long l = M->col;
+		long m = l-1
 		
 		if (l < 2) {
 			
