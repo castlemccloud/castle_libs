@@ -88,29 +88,47 @@ double determinate(matrix_t * M) {
 			
 		} else {
 			
-			double sum = 0.0;
+			matrix_t * temp = make_matrix(l, l);
+			for(long i = 0; i < l*l; i++) temp->data[i] = M->data[i];
+			
+			double F[l];
+			double Q[l];
+			
+			for(long i = 0; i < m; i++) {
+			    
+			    get_row_matrix(temp, i, F);
+			    double A = F[i];
+			    
+			    for(long j = i+1; j < l; j++) {
+			        
+			        get_row_matrix(temp, j, Q);
+			        
+			        double B = Q[i];
+			        double S = -(B / A);
+			        
+			        for(long k = 0; k < l; k++) {
+			            
+			            Q[k] = Q[k] + S*F[k];
+			            
+			        }
+			        
+			        set_row_matrix(temp, j, Q);
+			        
+			    }
+			    
+			}
+			
+			double product = 1.0;
 			
 			for(long i = 0; i < l; i++) {
 				
-				matrix_t * temp = super_matrix(M, i+1, 1, l-1, l-1);
-				matrix_t * temp2 = super_matrix(temp, -i, 0, l-1, l-1);
-				
-				if (i % 2 == 0) {
-					
-					sum += get_matrix(M, i, 0) * determinate(temp2);
-					
-				} else {
-					
-					sum -= get_matrix(M, i, 0) * determinate(temp2);
-					
-				}
-				
-				destroy_matrix(temp2);
-				destroy_matrix(temp);
+				product *= get_matrix(temp, i, i);
 				
 			}
 			
-			return sum;
+			destroy_matrix(temp);
+			
+			return product;
 			
 		}
 		
