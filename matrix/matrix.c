@@ -3,13 +3,10 @@
 
 long modd(long A, long B) {
 	if (B == 0) return -1;
-	while(A < B) {
-		A += B;
-	}
-	while(A >= B) {
-		A -= B;
-	}
-	return A;
+	long k = A/B;
+	long rtn = A - k*B;
+	if (rtn < 0) rtn += B;
+	return rtn;
 }
 
 
@@ -181,7 +178,7 @@ matrix_t * inverse_matrix(matrix_t * M) {
 				matrix_t * temp = super_matrix(M, j+1, i+1, m, m);
 				matrix_t * temp2 = super_matrix(temp, -j, -i, m, m);
 				
-				set_matrix(CoFactor, j, i, pow(-1.0, i+j) * determinate(temp2));
+				set_matrix(CoFactor, j, i, ((i+j)%2 ? -1.0 : 1.0) * determinate(temp2));
 				
 				destroy_matrix(temp2);
 				destroy_matrix(temp);
@@ -189,7 +186,12 @@ matrix_t * inverse_matrix(matrix_t * M) {
 			}
 		}
 		
-		double deter = determinate(M);
+		double deter = 0.0;
+		double r[l]; get_row_matrix(M, 0, r);
+		double c[l]; get_row_matrix(CoFactor, 0, c);
+		for(long i = 0; i < l; i++) {
+		    deter += r[i]*c[i];
+		}
 		
 		if (deter == 0.0) {
 			printf("Singularity!\n");
