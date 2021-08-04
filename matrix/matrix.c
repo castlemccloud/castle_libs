@@ -87,11 +87,19 @@ void set_row_matrix(matrix_t * M, long row, double * data) {
         }
     }
 }
+
 double determinate(matrix_t * M) {
 	
 	if (M && M->col == M->row) {
 		long l = M->col;
-		long m = l-1
+		long m = l-1;
+		
+		
+		double T[l];
+		get_col_matrix(M, 0, T);
+		double sum = 0;
+		for(long i = 0; i < l; i++) sum += T[i];
+		if (sum == 0.0) return 0.0;
 		
 		if (l < 2) {
 			
@@ -115,16 +123,42 @@ double determinate(matrix_t * M) {
 			    get_row_matrix(temp, i, F);
 			    double A = F[i];
 			    
+				
+				// A Zero Fix
+				if (A == 0.0) {
+					long a;
+					for(a == 0; a < l; a++) {
+						if (i != a && get_matrix(temp, i, a) != 0.0) {
+							break;
+						}
+					}
+					
+					if (a < l) {
+						get_row_matrix(temp, a, Q);
+						for(long b = 0; b < l; b++) {
+							F[i] += Q[i];
+						}
+						set_row_matrix(temp, i, F);
+						
+					} else {
+						printf("No Solution!?!?\n");
+						return 0.0;
+					}
+					
+				}
+				
+				
+				
 			    for(long j = i+1; j < l; j++) {
 			        
 			        get_row_matrix(temp, j, Q);
 			        
 			        double B = Q[i];
-			        double S = -(B / A);
+			        double S = (B / A);
 			        
 			        for(long k = 0; k < l; k++) {
 			            
-			            Q[k] = Q[k] + S*F[k];
+			            Q[k] = Q[k] - S*F[k];
 			            
 			        }
 			        

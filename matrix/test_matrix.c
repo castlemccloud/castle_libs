@@ -11,7 +11,7 @@ int main(void) {
 	srand(time(NULL));
 	
 	
-	matrix_t * Test = make_matrix(5, 5);
+	matrix_t * Test = make_matrix(64, 64);
 	for(long i = 0; i < Test->row; i++) {
 		for(long j = 0; j < Test->col; j++) {
 			set_matrix(Test, j, i, (((double)(rand() % 1000) / 500.0) - 1.0));
