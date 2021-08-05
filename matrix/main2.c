@@ -4,47 +4,65 @@
 #include <math.h>
 
 #include "matrix.h"
-float fun(float a, float b, float c){
-	
-	return 136 + 53*a + 143*b +  132*a*b + 161*c + 149*a*c + 3*b*c + 0 *a*b*c;
-}
 
 int main(void)
 {
 	
 	srand(1234567890);
 	
-	int numFactors = 3;
+	long numFactors = 2;
+	long numPower = 2;
+	long numSamples = 2*pow(numPower,numFactors);
 	
-	int numPower = 3;
-	
-	int numSamples = 2 * pow(numPower,numFactors);
+	matrix_t* b = make_matrix(1,pow(numPower,numFactors));
+	for(long i = 0; i < b->row; i++){
+		set_matrix(b, 0, i,  (rand() % 1000) / 50.0f - 10.0f);
+	}
+	printf("b\n");
+	print_matrix(b);
 	
 	matrix_t* x = make_matrix(numFactors, numSamples);
-	
-	for(int i = 0; i < numSamples; i++){
-		for(int j = 0; j < numFactors; j++){
-			set_matrix(x, j, i,  (rand() % 1000) / 500.0f - 1.0f);
+	for(long i = 0; i < numSamples; i++){
+		for(long j = 0; j < numFactors; j++){
+			set_matrix(x, j, i,  (rand() % 1000) / 50.0f - 10.0f);
 		}
 	}
-	printf("x\n");
-	print_matrix(x);
+	//printf("x\n");
+	//print_matrix(x);
 	
 	matrix_t* Y = make_matrix(1,numSamples);
-	
-	for(int i = 0; i< numSamples; i++){
-		Y->data[i] = fun(x->data[i*x->col + 0],x->data[i*x->col + 1],x->data[i*x->col + 2]);
+	for(long i = 0; i< numSamples; i++){
+		set_matrix(Y, 0, i,  evaluate_matrix(numPower, super_matrix(x, 0, i, numFactors, 1), b));
 	}
-	printf("Y\n");
-	print_matrix(Y);
+	//printf("Y\n");
+	//print_matrix(Y);
+	
 	matrix_t* X = design_matrix(numPower, x);
+	//printf("X\n");
+	//print_matrix(X);
 	matrix_t* XT = transpose_matrix(X);
+	//printf("XT\n");
+	//print_matrix(XT);
 	matrix_t* temp = mult_matrix(X,XT);
+	//printf("temp\n");
+	//print_matrix(temp);
 	matrix_t* Xi = inverse_matrix(temp);
+	//printf("Xi\n");
+	//print_matrix(Xi);
 	matrix_t* temp2 = mult_matrix(Y,XT);
+	//printf("temp2\n");
+	//print_matrix(temp2);
 	matrix_t* B = mult_matrix(temp2, Xi);
 	printf("B\n");
 	print_matrix(B);
+	
+	double TotalErr = 0;
+	for(long i = 0; i < numSamples; i++){
+		double val = get_matrix(Y, 0, i) - evaluate_matrix(numPower, super_matrix(x, 0, i, numFactors, 1), B);
+		TotalErr += val*val;
+		
+	}
+	printf("Err %f\n",pow(TotalErr,0.5));
 	
 	return 0;
 }
