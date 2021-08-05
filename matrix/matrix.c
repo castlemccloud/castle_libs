@@ -10,6 +10,7 @@ long modd(long A, long B) {
 }
 
 
+
 matrix_t * make_matrix(long col, long row) {
 	matrix_t * rtn = (matrix_t *) malloc(sizeof(matrix_t));
 	*rtn = (matrix_t){col, row, (double *)malloc(sizeof(double)*col*row)};
@@ -48,7 +49,9 @@ matrix_t * super_matrix(matrix_t * M, long c_off, long r_off, long col, long row
 		
 		for(long i = 0; i < row; i++) {
 			for(long j = 0; j < col; j++) {
-				set_matrix(rtn, j, i, get_matrix(M, c_off + j, r_off + i));
+				
+				rtn->data[j + i*col] = M->data[modd(j + c_off, M->col) + modd(i + r_off, M->row)*M->col];
+				//set_matrix(rtn, j, i, get_matrix(M, c_off + j, r_off + i));
 			}
 		}
 		
@@ -59,31 +62,49 @@ matrix_t * super_matrix(matrix_t * M, long c_off, long r_off, long col, long row
 
 void get_col_matrix(matrix_t * M, long col, double * data) {
 	if (M) {
-		for(long i = 0; i < M->row; i++) {
-			data[i] = get_matrix(M, col, i);
+		col = modd(col, M->col);
+		
+		for(long i = 0, j = 0; i < M->row; i++, j += M->col) {
+			
+			data[i] = M->data[col + j];
+			//data[i] = get_matrix(M, col, i);
 		}
 	}
 }
 void get_row_matrix(matrix_t * M, long row, double * data) {
 	if (M) {
+		row = modd(row, M->row);
+		row *= M->col;
+		
 		for(long j = 0; j < M->col; j++) {
-			data[j] = get_matrix(M, j, row);
+			
+			data[j] = M->data[j + row];
+			//data[j] = get_matrix(M, j, row);
 		}
 	}
 }
 
 void set_col_matrix(matrix_t * M, long col, double * data) {
     if (M) {
+		col = modd(col, M->col);
+		
         for(long i = 0; i < M->row; i++) {
-            set_matrix(M, col, i, data[i]);
+			
+			M->data[col + i*M->col] = data[i];
+			//set_matrix(M, col, i, data[i]);
         }
     }
 }
 
 void set_row_matrix(matrix_t * M, long row, double * data) {
     if (M) {
+		row = modd(row, M->row);
+		row *= M->row;
+		
         for(long j = 0; j < M->col; j++) {
-            set_matrix(M, j, row, data[j]);
+			
+			M->data[j + row] = data[j];
+            //set_matrix(M, j, row, data[j]);
         }
     }
 }
@@ -93,13 +114,6 @@ double determinate(matrix_t * M) {
 	if (M && M->col == M->row) {
 		long l = M->col;
 		long m = l-1;
-		
-		
-		double T[l];
-		get_col_matrix(M, 0, T);
-		double sum = 0;
-		for(long i = 0; i < l; i++) sum += T[i];
-		if (sum == 0.0) return 0.0;
 		
 		if (l < 2) {
 			
@@ -112,6 +126,10 @@ double determinate(matrix_t * M) {
 			
 		} else {
 			
+			double sum = 0;
+			for(long i = 0; i < M->row*M->col; i += M->col) sum += M->data[i];
+			if (sum == 0.0) return 0.0;
+
 			matrix_t * temp = make_matrix(l, l);
 			for(long i = 0; i < l*l; i++) temp->data[i] = M->data[i];
 			
@@ -120,10 +138,15 @@ double determinate(matrix_t * M) {
 			
 			for(long i = 0; i < m; i++) {
 			    
-			    get_row_matrix(temp, i, F);
+				get_col_matrix(temp, i, F);
+				double sum = 0.0;
+				long a;
+				for(a = i+1; a < l; a++) sum += F[a];
+				if (a == 0.0) continue;
+				
+				get_row_matrix(temp, i, F);
 			    double A = F[i];
 			    
-				
 				// A Zero Fix
 				if (A == 0.0) {
 					long a;
@@ -142,6 +165,7 @@ double determinate(matrix_t * M) {
 						
 					} else {
 						printf("No Solution!?!?\n");
+						destroy_matrix(temp);
 						return 0.0;
 					}
 					
@@ -150,29 +174,33 @@ double determinate(matrix_t * M) {
 				
 				
 			    for(long j = i+1; j < l; j++) {
-			        
-			        get_row_matrix(temp, j, Q);
+			        long b = j*temp->col;
+					
+					for(long a = 0; a < l; a++) {
+						Q[a] = temp->data[a + b];
+					}
 			        
 			        double B = Q[i];
+					
+					if (B == 0.0) continue;
+					
 			        double S = (B / A);
 			        
 			        for(long k = 0; k < l; k++) {
-			            
 			            Q[k] = Q[k] - S*F[k];
-			            
 			        }
 			        
-			        set_row_matrix(temp, j, Q);
-			        
+			        for(long a = 0; a < l; a++) {
+						temp->data[a + b] = Q[a];
+					}
 			    }
-			    
 			}
 			
 			double product = 1.0;
 			
-			for(long i = 0; i < l; i++) {
+			for(long i = 0; i < temp->row*temp->col; i += temp->col+1) {
 				
-				product *= get_matrix(temp, i, i);
+				product *= temp->data[i];
 				
 			}
 			
@@ -193,7 +221,9 @@ matrix_t * transpose_matrix(matrix_t * M) {
 		for(long i = 0; i < rtn->row; i++) {
 			for(long j = 0; j < rtn->col; j++) {
 				
-				set_matrix(rtn, j, i, get_matrix(M, i, j));
+				rtn->data[j + i*rtn->col] = M->data[i + j * M->col];
+				
+				//set_matrix(rtn, j, i, get_matrix(M, i, j));
 				
 			}
 		}
