@@ -262,6 +262,24 @@ matrix_t * mult_matrix(matrix_t * A, matrix_t * B) {
 	return NULL;
 }
 
+matrix_t * design_matrix(int numPower, matrix_t * x) {
+	int numFactors = x->col;
+	int numSamples = x->row;
+	int XSize = pow(numPower,numFactors);
+	matrix_t* X = make_matrix(XSize, numSamples);
+	
+	for(int i = 0; i < numSamples; i++){
+        for(int j = 0; j < XSize; j++){
+			double prod = 1;
+			for(int k = 0; k < numFactors; k++){
+				prod *= pow(get_matrix(x,k,i), (j / (int)pow(numPower,k))%numPower);
+			}
+            set_matrix(X, j, i, prod);
+        }
+    }
+	return X;
+}
+
 matrix_t * inverse_matrix(matrix_t * M) {
 	
 	if (M && M->col == M->row) {
