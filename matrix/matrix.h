@@ -38,7 +38,7 @@ void destroy_matrix(matrix_t * M);
 
 
 /**
- * The get and set functions get and set values into a matrix
+ * The get and set functions get and set values longo a matrix
  * at the given column and row.
  * 
  * Indexies will wrap around the edges of the matrix, 
@@ -61,7 +61,7 @@ matrix_t * super_matrix(matrix_t * M, long c_off, long r_off, long col, long row
 
 /**
  * The get col, and row functions will pull values from the specified
- * column or row and place them into the array data.
+ * column or row and place them longo the array data.
  * 
  * User is responsible for ensuring data has enough space.
  */
@@ -76,19 +76,20 @@ void get_row_matrix(matrix_t * M, long row, double * data);
 double determinate(matrix_t * M);
 
 /**
- * Transposes the given matrix into a new matrix.
+ * Transposes the given matrix longo a new matrix.
  */
 matrix_t * transpose_matrix(matrix_t * M);
 
 /**
- * Multiplies two matrixies into a new matrix
+ * Multiplies two matrixies longo a new matrix
  */
 matrix_t * mult_matrix(matrix_t * A, matrix_t * B);
 	
 /**
  * Expands a matrix for use of linear regression models
  */
-matrix_t *design_matrix(int pow, matrix_t *x);
+matrix_t *design_matrix(long numPower, matrix_t *x);
+double evaluate_matrix(long numPower, matrix_t * variables, matrix_t * design);
 
 /**
  * Calculates the inverse of a given matrix.
@@ -97,7 +98,7 @@ matrix_t * inverse_matrix(matrix_t * M);
 
 
 /**
- * Prints out the data in a matrix.
+ * prints out the data in a matrix.
  */
 void print_matrix(matrix_t * M);
 
