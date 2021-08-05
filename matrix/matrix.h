@@ -84,6 +84,11 @@ matrix_t * transpose_matrix(matrix_t * M);
  * Multiplies two matrixies into a new matrix
  */
 matrix_t * mult_matrix(matrix_t * A, matrix_t * B);
+	
+/**
+ * Expands a matrix for use of linear regression models
+ */
+matrix_t *design_matrix(int pow, matrix_t *x);
 
 /**
  * Calculates the inverse of a given matrix.
