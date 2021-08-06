@@ -12,13 +12,20 @@ extern "C" {
 
 #include <stdlib.h>
 #include <stdio.h>
+
 #include <math.h>
+#include <stdint.h>
+#include <complex.h>
+
+#include <mpc.h>
+
+#define PRECISION 512
 
 typedef struct {
 	
 	long col;
 	long row;
-	double * data;
+	mpc_t * data;
 	
 } matrix_t;
 
@@ -44,8 +51,8 @@ void destroy_matrix(matrix_t * M);
  * Indexies will wrap around the edges of the matrix, 
  * so all values, including negative values are valid.
  */
-void set_matrix(matrix_t * M, long col, long row, double value);
-double get_matrix(matrix_t * M, long col, long row);
+void set_matrix(matrix_t * M, long col, long row, mpc_t value);
+void get_matrix(matrix_t * M, long col, long row, mpc_t rtn);
 
 /**
  * Super matrix is to get a subset of a matrix.
@@ -65,15 +72,18 @@ matrix_t * super_matrix(matrix_t * M, long c_off, long r_off, long col, long row
  * 
  * User is responsible for ensuring data has enough space.
  */
-void get_col_matrix(matrix_t * M, long col, double * data);
-void get_row_matrix(matrix_t * M, long row, double * data);
+void get_col_matrix(matrix_t * M, long col, mpc_t * data);
+void get_row_matrix(matrix_t * M, long row, mpc_t * data);
+
+void set_col_matrix(matrix_t * M, long col, mpc_t * data);
+void set_row_matrix(matrix_t * M, long row, mpc_t * data);
 
 
 /**
  * Calculates the determinate of a matrix.
  * Size does not matter. Go big.
  */
-double determinate(matrix_t * M);
+void determinate(matrix_t * M, mpc_t rtn);
 
 /**
  * Transposes the given matrix longo a new matrix.
@@ -89,7 +99,7 @@ matrix_t * mult_matrix(matrix_t * A, matrix_t * B);
  * Expands a matrix for use of linear regression models
  */
 matrix_t *design_matrix(long numPower, matrix_t *x);
-double evaluate_matrix(long numPower, matrix_t * variables, matrix_t * design);
+void evaluate_matrix(long numPower, matrix_t * variables, matrix_t * design, mpc_t rtn);
 
 /**
  * Calculates the inverse of a given matrix.
