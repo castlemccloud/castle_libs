@@ -299,38 +299,46 @@ matrix_t * mult_matrix(matrix_t * A, matrix_t * B) {
 	return NULL;
 }
 
-/*
 matrix_t * design_matrix(long numPower, matrix_t * x) {
 	long numFactors = x->col;
 	long numSamples = x->row;
 	long XSize = pow(numPower,numFactors);
 	matrix_t* X = make_matrix(XSize, numSamples);
+	mpc_t prod; mpc_init2(prod, PRECISION); 
+	mpc_t T; mpc_init2(T, PRECISION);
 	
 	for(long i = 0; i < numSamples; i++){
 		for(long j = 0; j < XSize; j++){
-			double prod = 1;
+			mpc_set_d(prod, 1.0,MPC_RNDDD);
 			for(long k = 0; k < numFactors; k++){
-				prod *= pow(get_matrix(x,k,i), (j / (long)pow(numPower,k))%numPower);
+				get_matrix(x,k,i,T);
+				long power = (j / (long)pow(numPower,k))%numPower;
+				mpc_pow_si(T,T,power,MPC_RNDDD);
+				mpc_mul(prod, prod, T, MPC_RNDDD);
 			}
 			set_matrix(X, j, i, prod);
 		}
 	}
+	mpc_clear(prod);
+	mpc_clear(T);
 	return X;
 }
 
-double evaluate_matrix(long numPower, matrix_t * variables, matrix_t * design) {
-	double sum = 0;
+void evaluate_matrix(long numPower, matrix_t * variables, matrix_t * design, mpc_t rtn) {
+	mpc_t prod; mpc_init2(prod, PRECISION); 
+	mpc_t T; mpc_init2(T, PRECISION);
+	mpc_set_si(rtn,0,MPC_RNDDD);
 	for(long j = 0; j < design->row; j++){
-		double prod = get_matrix(design,0,j);
+		get_matrix(design,0,j, prod);
 		for(long k = 0; k < variables->col; k++){
-			prod *= pow(get_matrix(variables,k,0), (j / (long)pow(numPower,k))%numPower);
+			get_matrix(variables,k,0,T);
+			long power = (j / (long)pow(numPower,k))%numPower;
+			mpc_pow_si(T,T,power ,MPC_RNDDD);
+			mpc_mul(prod, prod, T, MPC_RNDDD);
 		}
-		sum += prod;
+		mpc_add(rtn, rtn, prod, MPC_RNDDD);
 	}
-	
-	return sum;
 }
-*/
 
 
 
