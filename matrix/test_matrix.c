@@ -11,7 +11,7 @@ int main(void) {
 	srand(1234567890);
 	
 	
-	matrix_t * Test = make_matrix(8, 8);
+	matrix_t * Test = make_matrix(64, 64);
 	
 	mpc_t T; mpc_init2(T, PRECISION);
 	

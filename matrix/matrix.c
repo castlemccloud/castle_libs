@@ -82,8 +82,6 @@ void get_row_matrix(matrix_t * M, long row, mpc_t  * data) {
 
 void set_col_matrix(matrix_t * M, long col, mpc_t  * data) {
 	if (M) {
-		col = modd(col, M->col);
-		
 		for(long i = 0; i < M->row; i++) {
 			set_matrix(M, col, i, data[i]);
 		}
@@ -92,8 +90,6 @@ void set_col_matrix(matrix_t * M, long col, mpc_t  * data) {
 
 void set_row_matrix(matrix_t * M, long row, mpc_t  * data) {
 	if (M) {
-		row = modd(row, M->row);
-		
 		for(long j = 0; j < M->col; j++) {
 			set_matrix(M, j, row, data[j]);
 		}
@@ -233,14 +229,18 @@ void determinate(matrix_t * M, mpc_t rtn) {
 matrix_t * transpose_matrix(matrix_t * M) {
 	if (M) {
 		
+		mpc_t T; mpc_init2(T, PRECISION);
+		
 		matrix_t * rtn = make_matrix(M->row, M->col);
 		for(long i = 0; i < rtn->row; i++) {
 			for(long j = 0; j < rtn->col; j++) {
-				mpc_t temp; get_matrix(M, i, j, temp);
-				set_matrix(rtn, j, i, temp);
+				get_matrix(M, i, j, T);
+				set_matrix(rtn, j, i, T);
 				
 			}
 		}
+		mpc_clear(T);
+		
 		return rtn;
 	}
 	
@@ -248,38 +248,6 @@ matrix_t * transpose_matrix(matrix_t * M) {
 }
 
 matrix_t * mult_matrix(matrix_t * A, matrix_t * B) {
-	
-	/*
-	if (A && B && A->row == B->col) {
-		
-		long l = A->row;
-		
-		matrix_t * rtn = make_matrix(A->col, B->row);
-		
-		for(long i = 0; i < rtn->row; i++) {
-			for(long j = 0; j < rtn->col; j++) {
-				
-				double c[l]; get_col_matrix(A, j, c);
-				double r[l]; get_row_matrix(B, i, r);
-				
-				double sum = 0.0;
-				for(long k = 0; k < l; k++) {
-					sum += c[k]*r[k];
-				}
-				
-				set_matrix(rtn, j, i, sum);
-			}
-		}
-		
-		return rtn;
-	}
-	
-	return NULL;
-	*/
-	
-	
-	
-	
 	
 	if (A && B && A->row == B->col) {
 		
@@ -474,9 +442,9 @@ void print_matrix(matrix_t * M) {
 				
 				get_matrix(M, j, i, T);
 				
-				char * str = mpc_get_str(10, 2, T, MPC_RNDDD);
+				char * str = mpc_get_str(10, 4, T, MPC_RNDDD);
 				
-				printf("%14s", str);
+				printf("%15s", str);
 				
 				mpc_free_str(str);
 				
