@@ -19,7 +19,7 @@ extern "C" {
 
 #include <mpc.h>
 
-#define PRECISION 512
+#define PRECISION 64
 
 typedef struct {
 	
@@ -51,8 +51,10 @@ void destroy_matrix(matrix_t * M);
  * Indexies will wrap around the edges of the matrix, 
  * so all values, including negative values are valid.
  */
-void set_matrix(matrix_t * M, long col, long row, mpc_t value);
-void get_matrix(matrix_t * M, long col, long row, mpc_t rtn);
+#define get_matrix(M, c, r) M->data[c + r*M->col]
+
+//void set_matrix(matrix_t * M, long col, long row, mpc_t value);
+//void get_matrix(matrix_t * M, long col, long row, mpc_t rtn);
 
 /**
  * Super matrix is to get a subset of a matrix.

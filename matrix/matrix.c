@@ -1,5 +1,8 @@
 #include "matrix.h"
 
+// Documentation for MPC
+// http://www.multiprecision.org/downloads/mpc-1.2.1.pdf
+
 
 long modd(long A, long B) {
 	if (B == 0) return -1;
@@ -10,14 +13,13 @@ long modd(long A, long B) {
 }
 
 
-
 matrix_t * make_matrix(long col, long row) {
 	matrix_t * rtn = (matrix_t *) malloc(sizeof(matrix_t));
 	*rtn = (matrix_t){col, row, (mpc_t *)malloc(sizeof(mpc_t)*col*row)};
 	
 	for(long i = 0; i < row*col; i++) {
 		mpc_init2(rtn->data[i], PRECISION);
-		//rtn->data[i] = 0.0f;
+		mpc_set_d(rtn->data[i], 0.0, MPC_RNDDD);
 	}
 	return rtn;
 }
@@ -32,6 +34,7 @@ void destroy_matrix(matrix_t * M) {
 	}
 }
 
+/*
 void set_matrix(matrix_t * M, long col, long row, mpc_t value) {
 	if (M) {
 		mpc_set(M->data[modd(col, M->col) + modd(row, M->row) * M->col], value, MPC_RNDDD);
@@ -42,85 +45,70 @@ void get_matrix(matrix_t * M, long col, long row, mpc_t rtn) {
 		mpc_set(rtn, M->data[modd(col, M->col) + modd(row, M->row) * M->col], MPC_RNDDD);
 	}
 }
+*/
 
 matrix_t * super_matrix(matrix_t * M, long c_off, long r_off, long col, long row) {
-	if (M) {
-		matrix_t * rtn = make_matrix(col, row);
-		
-		mpc_t temp; mpc_init2(temp, PRECISION);
-		
-		for(long i = 0; i < row; i++) {
-			for(long j = 0; j < col; j++) {
-				
-				get_matrix(M, c_off + j, r_off + i, temp);
-				set_matrix(rtn, j, i, temp);
-				
-			}
+	matrix_t * rtn = make_matrix(col, row);
+
+	for(long i = 0; i < row; i++) {
+		for(long j = 0; j < col; j++) {
+			
+			long x = modd(c_off + j, M->col);
+			long y = modd(r_off + i, M->row);
+			
+			mpc_set(get_matrix(rtn, j, i), get_matrix(M, x, y), MPC_RNDDD);
 		}
-		
-		mpc_clear(temp);
-		
-		return rtn;
 	}
-	return NULL;
+
+	return rtn;
 }
 
 void get_col_matrix(matrix_t * M, long col, mpc_t  * data) {
-	if (M) {
-		for(long i = 0; i < M->row; i++) {
-			get_matrix(M, col, i, data[i]);
-		}
+	for(long i = 0; i < M->row; i++) {
+		mpc_set(data[i], get_matrix(M, col, i), MPC_RNDDD);
 	}
 }
 void get_row_matrix(matrix_t * M, long row, mpc_t  * data) {
-	if (M) {
-		for(long j = 0; j < M->col; j++) {
-			get_matrix(M, j, row, data[j]);
-		}
+	for(long j = 0; j < M->col; j++) {
+		mpc_set(data[j], get_matrix(M, j, row), MPC_RNDDD);
 	}
 }
 
 void set_col_matrix(matrix_t * M, long col, mpc_t  * data) {
-	if (M) {
-		for(long i = 0; i < M->row; i++) {
-			set_matrix(M, col, i, data[i]);
-		}
+	for(long i = 0; i < M->row; i++) {
+		mpc_set(get_matrix(M, col, i), data[i], MPC_RNDDD);
 	}
 }
 
 void set_row_matrix(matrix_t * M, long row, mpc_t  * data) {
-	if (M) {
-		for(long j = 0; j < M->col; j++) {
-			set_matrix(M, j, row, data[j]);
-		}
+	for(long j = 0; j < M->col; j++) {
+		mpc_set(get_matrix(M, j, row), data[j], MPC_RNDDD);
 	}
 }
 
 void determinate(matrix_t * M, mpc_t rtn) {
 	
-	if (M && M->col == M->row) {
+	if (M->col == M->row) {
 		long l = M->col;
 		long m = l-1;
 		
 		if (l < 2) {
 			
-			get_matrix(M, 0, 0, rtn);
+			mpc_set(rtn, get_matrix(M, 0, 0), MPC_RNDDD);
 			
 		} else if (l == 2) {
-			
-			//return (get_matrix(M, 0, 0) * get_matrix(M, 1, 1)) - (get_matrix(M, 0, 1) * get_matrix(M, 1, 0));
 			
 			mpc_t a, b;
 			
 			mpc_init2(a, PRECISION);
 			mpc_init2(b, PRECISION);
 			
-			get_matrix(M, 0, 0, rtn);
-			get_matrix(M, 1, 1, b);
+			mpc_set(rtn, get_matrix(M, 0, 0), MPC_RNDDD);
+			mpc_set(b, get_matrix(M, 1, 1), MPC_RNDDD);
 			mpc_mul(rtn, rtn, b, MPC_RNDDD);
 			
-			get_matrix(M, 0, 1, a);
-			get_matrix(M, 1, 0, b);
+			mpc_set(a, get_matrix(M, 0, 1), MPC_RNDDD);
+			mpc_set(b, get_matrix(M, 1, 0), MPC_RNDDD);
 			mpc_mul(a, a, b, MPC_RNDDD);
 			
 			mpc_sub(rtn, rtn, a, MPC_RNDDD);
@@ -145,18 +133,15 @@ void determinate(matrix_t * M, mpc_t rtn) {
 			mpc_t T; mpc_init2(T, PRECISION);
 			
 			for(long i = 0; i < m; i++) {
-					
+				
 				get_row_matrix(temp, i, F);
 				
-				mpc_set(A, F[i], MPC_RNDDD);
-				
 				// A Zero Fix
-				//if (A == 0.0) {
-				if (!mpc_cmp_si(A, 0)){
+				if (!mpc_cmp_si(F[i], 0)){
+					
 					long a;
 					for(a = 0; a < l; a++) {
-						get_matrix(temp, i, a, T);
-						if (i != a && mpc_cmp_si(T, 0)) {
+						if (i != a && mpc_cmp_si(get_matrix(temp, i, a), 0)) {
 							break;
 						}
 					}
@@ -169,7 +154,9 @@ void determinate(matrix_t * M, mpc_t rtn) {
 						set_row_matrix(temp, i, F);
 						
 					} else {
-						printf("No Solution!?!?\n");
+						//printf("No Solution!?!?\n");
+						//print_matrix(temp);
+						mpc_set_d(rtn, 0.0, MPC_RNDDD);
 						destroy_matrix(temp);
 						return;
 					}
@@ -181,11 +168,9 @@ void determinate(matrix_t * M, mpc_t rtn) {
 					
 					get_row_matrix(temp, j, Q);
 					
-					mpc_set(B, Q[i], MPC_RNDDD);
+					if(!mpc_cmp_si(Q[i],0)) continue;
 					
-					if(!mpc_cmp_si(B,0)) continue;
-					
-					mpc_div(S, B, A, MPC_RNDDD);
+					mpc_div(S, Q[i], F[i], MPC_RNDDD);
 					
 					for(long k = 0; k < l; k++) {
 						
@@ -204,7 +189,7 @@ void determinate(matrix_t * M, mpc_t rtn) {
 			mpc_set_d(rtn, 1.0, MPC_RNDDD);
 			
 			for(long i = 0; i < l; i ++) {
-				get_matrix(temp, i, i, T);
+				mpc_set(T, get_matrix(temp, i, i), MPC_RNDDD);
 				mpc_mul(rtn, rtn, T, MPC_RNDDD);
 			}
 			
@@ -227,24 +212,16 @@ void determinate(matrix_t * M, mpc_t rtn) {
 }
 
 matrix_t * transpose_matrix(matrix_t * M) {
-	if (M) {
-		
-		mpc_t T; mpc_init2(T, PRECISION);
-		
-		matrix_t * rtn = make_matrix(M->row, M->col);
-		for(long i = 0; i < rtn->row; i++) {
-			for(long j = 0; j < rtn->col; j++) {
-				get_matrix(M, i, j, T);
-				set_matrix(rtn, j, i, T);
-				
-			}
+	matrix_t * rtn = make_matrix(M->row, M->col);
+	for(long i = 0; i < rtn->row; i++) {
+		for(long j = 0; j < rtn->col; j++) {
+
+			mpc_set(get_matrix(rtn, j, i), get_matrix(M, i, j), MPC_RNDDD);
+
 		}
-		mpc_clear(T);
-		
-		return rtn;
 	}
-	
-	return NULL;
+
+	return rtn;
 }
 
 matrix_t * mult_matrix(matrix_t * A, matrix_t * B) {
@@ -265,6 +242,7 @@ matrix_t * mult_matrix(matrix_t * A, matrix_t * B) {
 			mpc_init2(r[i], PRECISION);
 		}
 		
+		
 		for(long i = 0; i < rtn->row; i++) {
 			for(long j = 0; j < rtn->col; j++) {
 				
@@ -274,12 +252,11 @@ matrix_t * mult_matrix(matrix_t * A, matrix_t * B) {
 				mpc_set_d(sum, 0.0, MPC_RNDDD);
 				
 				for(long k = 0; k < l; k++) {
-					mpc_set(T, c[k], MPC_RNDDD);
-					mpc_mul(T, T, r[k], MPC_RNDDD);
+					mpc_mul(T, c[k], r[k], MPC_RNDDD);
 					mpc_add(sum, sum, T, MPC_RNDDD);
 				}
 				
-				set_matrix(rtn, j, i, sum);
+				mpc_set(get_matrix(rtn, j, i), sum, MPC_RNDDD);
 			}
 		}
 		
@@ -302,22 +279,34 @@ matrix_t * mult_matrix(matrix_t * A, matrix_t * B) {
 matrix_t * design_matrix(long numPower, matrix_t * x) {
 	long numFactors = x->col;
 	long numSamples = x->row;
+	
 	long XSize = pow(numPower,numFactors);
+	
 	matrix_t* X = make_matrix(XSize, numSamples);
+	
 	mpc_t prod; mpc_init2(prod, PRECISION); 
 	mpc_t T; mpc_init2(T, PRECISION);
 	
 	for(long i = 0; i < numSamples; i++){
+		
 		for(long j = 0; j < XSize; j++){
-			mpc_set_d(prod, 1.0,MPC_RNDDD);
+			
+			mpc_set_d(prod, 1.0, MPC_RNDDD);
+			
 			for(long k = 0; k < numFactors; k++){
-				get_matrix(x,k,i,T);
+				
+				mpc_set(T, get_matrix(x, k, i), MPC_RNDDD);
+				
 				long power = (j / (long)pow(numPower,k))%numPower;
-				mpc_pow_si(T,T,power,MPC_RNDDD);
+				
+				mpc_pow_si(T, T, power, MPC_RNDDD);
+				
 				mpc_mul(prod, prod, T, MPC_RNDDD);
 			}
-			set_matrix(X, j, i, prod);
+			
+			mpc_set(get_matrix(X, j, i), prod, MPC_RNDDD);
 		}
+	
 	}
 	mpc_clear(prod);
 	mpc_clear(T);
@@ -325,17 +314,27 @@ matrix_t * design_matrix(long numPower, matrix_t * x) {
 }
 
 void evaluate_matrix(long numPower, matrix_t * variables, matrix_t * design, mpc_t rtn) {
+	
 	mpc_t prod; mpc_init2(prod, PRECISION); 
 	mpc_t T; mpc_init2(T, PRECISION);
-	mpc_set_si(rtn,0,MPC_RNDDD);
+	
+	mpc_set_si(rtn, 0, MPC_RNDDD);
+	
 	for(long j = 0; j < design->row; j++){
-		get_matrix(design,0,j, prod);
+		
+		mpc_set(prod, get_matrix(design, 0, j), MPC_RNDDD);
+		
 		for(long k = 0; k < variables->col; k++){
-			get_matrix(variables,k,0,T);
+			
+			mpc_set(T, get_matrix(variables, k, 0), MPC_RNDDD);
+			
 			long power = (j / (long)pow(numPower,k))%numPower;
-			mpc_pow_si(T,T,power ,MPC_RNDDD);
+			
+			mpc_pow_si(T, T, power, MPC_RNDDD);
+			
 			mpc_mul(prod, prod, T, MPC_RNDDD);
 		}
+		
 		mpc_add(rtn, rtn, prod, MPC_RNDDD);
 	}
 }
@@ -344,7 +343,7 @@ void evaluate_matrix(long numPower, matrix_t * variables, matrix_t * design, mpc
 
 matrix_t * inverse_matrix(matrix_t * M) {
 	
-	if (M && M->col == M->row) {
+	if (M->col == M->row) {
 		
 		long l = M->col;
 		long m = l-1;
@@ -358,11 +357,19 @@ matrix_t * inverse_matrix(matrix_t * M) {
 				matrix_t * temp = super_matrix(M, j+1, i+1, m, m);
 				matrix_t * temp2 = super_matrix(temp, -j, -i, m, m);
 				
+				//printf("Temp:\n");
+				//print_matrix(temp);
+				
+				//printf("Temp2:\n");
+				//print_matrix(temp2);
+				
+				
 				determinate(temp2, deter);
+				//determinate(temp, deter);
 				
 				if ((i+j)%2) mpc_neg(deter, deter, MPC_RNDDD);
 				
-				set_matrix(CoFactor, j, i, deter);
+				mpc_set(get_matrix(CoFactor, j, i), deter, MPC_RNDDD);
 				
 				destroy_matrix(temp2);
 				destroy_matrix(temp);
@@ -387,6 +394,8 @@ matrix_t * inverse_matrix(matrix_t * M) {
 			mpc_add(deter, deter, T, MPC_RNDDD);
 		}
 		
+		
+		
 		if (!mpc_cmp_si(deter, 0)) {
 			printf("Singularity!\n");
 			
@@ -405,16 +414,10 @@ matrix_t * inverse_matrix(matrix_t * M) {
 		}
 		
 		
-		
-		
 		matrix_t * rtn = make_matrix(l, l);
 		for(long i = 0; i < l; i++) {
 			for(long j = 0; j < l; j++) {
-				
-				get_matrix(CoFactor, i, j, T);
-				mpc_div(T, T, deter, MPC_RNDDD);
-				set_matrix(rtn, j, i, T);
-				
+				mpc_div(get_matrix(rtn, j, i), get_matrix(CoFactor, i, j), deter, MPC_RNDDD);
 			}
 		}
 		
@@ -441,28 +444,18 @@ matrix_t * inverse_matrix(matrix_t * M) {
 
 
 void print_matrix(matrix_t * M) {
-	if (M) {
-		
-		mpc_t T; mpc_init2(T, PRECISION);
-		
-		for(long i = 0; i < M->row; i++) {
-			for(long j = 0; j < M->col; j++) {
-				
-				get_matrix(M, j, i, T);
-				
-				char * str = mpc_get_str(10, 4, T, MPC_RNDDD);
-				
-				printf("%15s", str);
-				
-				mpc_free_str(str);
-				
-				printf("%s", j < M->col - 1 ? ", " : "\n");
-				
-			}
+	for(long i = 0; i < M->row; i++) {
+		for(long j = 0; j < M->col; j++) {
+
+			char * str = mpc_get_str(10, 6, get_matrix(M, j, i), MPC_RNDDD);
+
+			printf("%15s", str);
+
+			mpc_free_str(str);
+
+			printf("%s", j < M->col - 1 ? ", " : "\n");
+
 		}
-		
-		mpc_clear(T);
-		
 	}
 }
 
