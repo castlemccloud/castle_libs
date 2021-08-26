@@ -50,6 +50,7 @@ void get_matrix(matrix_t * M, long col, long row, mpc_t rtn) {
 matrix_t * super_matrix(matrix_t * M, long c_off, long r_off, long col, long row) {
 	matrix_t * rtn = make_matrix(col, row);
 
+	#pragma omp parallel for collapse(2)
 	for(long i = 0; i < row; i++) {
 		for(long j = 0; j < col; j++) {
 			
@@ -348,11 +349,15 @@ matrix_t * inverse_matrix(matrix_t * M) {
 		long l = M->col;
 		long m = l-1;
 		
-		mpc_t deter; mpc_init2(deter, MPC_RNDDD);
 		
+		mpc_t deter; mpc_init2(deter, MPC_RNDDD);
 		matrix_t * CoFactor = make_matrix(l, l);
+		
+		#pragma omp parallel for collapse(2)
 		for(long i = 0; i < l; i++) {
 			for(long j = 0; j < l; j++) {
+				
+				mpc_t det; mpc_init2(det, MPC_RNDDD);
 				
 				matrix_t * temp = super_matrix(M, j+1, i+1, m, m);
 				matrix_t * temp2 = super_matrix(temp, -j, -i, m, m);
@@ -364,15 +369,16 @@ matrix_t * inverse_matrix(matrix_t * M) {
 				//print_matrix(temp2);
 				
 				
-				determinate(temp2, deter);
+				determinate(temp2, det);
 				//determinate(temp, deter);
 				
-				if ((i+j)%2) mpc_neg(deter, deter, MPC_RNDDD);
+				if ((i+j)%2) mpc_neg(det, det, MPC_RNDDD);
 				
-				mpc_set(get_matrix(CoFactor, j, i), deter, MPC_RNDDD);
+				mpc_set(get_matrix(CoFactor, j, i), det, MPC_RNDDD);
 				
 				destroy_matrix(temp2);
 				destroy_matrix(temp);
+				mpc_clear(det);
 			}
 		}
 		

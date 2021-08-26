@@ -72,7 +72,7 @@ int main(void) {
 	*/
 
 
-	for(long l = 3; l <= 32; l++) {
+	for(long l = 3; l <= 1024; l++) {
 	matrix_t * temp = make_matrix(l, l);
 	for(long i = 0; i < l; i++) {
 		for(long j = 0; j < l; j++) {

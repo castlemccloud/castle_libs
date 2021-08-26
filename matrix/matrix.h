@@ -17,6 +17,7 @@ extern "C" {
 #include <stdint.h>
 #include <complex.h>
 
+#include <omp.h>
 #include <mpc.h>
 
 #define PRECISION 64
