@@ -120,6 +120,7 @@ void determinate(matrix_t * M, mpc_t rtn) {
 			
 			matrix_t * temp = super_matrix(M,0,0,l,l);
 			
+			/*
 			mpc_t * F = (mpc_t *) malloc(sizeof(mpc_t) * l);
 			mpc_t * Q = (mpc_t *) malloc(sizeof(mpc_t) * l);
 			
@@ -131,10 +132,13 @@ void determinate(matrix_t * M, mpc_t rtn) {
 			mpc_t A; mpc_init2(A, PRECISION);
 			mpc_t B; mpc_init2(B, PRECISION);
 			mpc_t S; mpc_init2(S, PRECISION);
-			mpc_t T; mpc_init2(T, PRECISION);
+			*/
+			
 			
 			for(long i = 0; i < m; i++) {
 				
+				mpc_t F[l];
+				for(long k = 0; k < l; k++) mpc_init2(F[k], PRECISION);
 				get_row_matrix(temp, i, F);
 				
 				// A Zero Fix
@@ -148,26 +152,35 @@ void determinate(matrix_t * M, mpc_t rtn) {
 					}
 					
 					if (a < l) {
+						
+						mpc_t Q[l];
+						for(long k = 0; k < l; k++) mpc_init2(Q[k], PRECISION);
 						get_row_matrix(temp, a, Q);
+						
 						for(long b = 0; b < l; b++) {
 							mpc_add(F[i], F[i], Q[i], MPC_RNDDD);
 						}
 						set_row_matrix(temp, i, F);
+						for(long k = 0; k < l; k++) mpc_clear(Q[k]);
 						
 					} else {
 						//printf("No Solution!?!?\n");
 						//print_matrix(temp);
 						mpc_set_d(rtn, 0.0, MPC_RNDDD);
 						destroy_matrix(temp);
-						return;
 					}
 					
 				}
-
 				
+				#pragma omp parallel for
 				for(long j = i+1; j < l; j++) {
 					
+					mpc_t Q[l];
+					for(long k = 0; k < l; k++) mpc_init2(Q[k], PRECISION);
 					get_row_matrix(temp, j, Q);
+					
+					mpc_t T, S;
+					mpc_init2(T, PRECISION); mpc_init2(S, PRECISION);
 					
 					if(!mpc_cmp_si(Q[i],0)) continue;
 					
@@ -181,13 +194,20 @@ void determinate(matrix_t * M, mpc_t rtn) {
 					}
 					
 					set_row_matrix(temp, j, Q);
+					
+					for(long k = 0; k < l; k++) mpc_clear(Q[k]);
+					mpc_clear(T);
+					mpc_clear(S);
 				}
+				
+				for(long k = 0; k < l; k++) mpc_clear(F[k]);
 				
 			}
 			
 			
 			// Return Values
 			mpc_set_d(rtn, 1.0, MPC_RNDDD);
+			mpc_t T; mpc_init2(T, PRECISION);
 			
 			for(long i = 0; i < l; i ++) {
 				mpc_set(T, get_matrix(temp, i, i), MPC_RNDDD);
@@ -195,16 +215,7 @@ void determinate(matrix_t * M, mpc_t rtn) {
 			}
 			
 			// Cleanup
-			mpc_clear(T);
-			mpc_clear(S);
-			mpc_clear(B);
-			mpc_clear(A);
-			for(long i = 0; i < l; i++) {
-				mpc_clear(F[i]);
-				mpc_clear(Q[i]);
-			}
-			free(F);
-			free(Q);
+			
 			destroy_matrix(temp);
 		}
 		

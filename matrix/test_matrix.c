@@ -72,33 +72,75 @@ int main(void) {
 	*/
 
 
-	for(long l = 3; l <= 1024; l++) {
-	matrix_t * temp = make_matrix(l, l);
-	for(long i = 0; i < l; i++) {
-		for(long j = 0; j < l; j++) {
-			mpc_set_d(get_matrix(temp, j, i), (rand() % 2000 / 1000.0 - 1.0), MPC_RNDDD);
+
+	for(long l = 3; l <= 64; l++) {
+		matrix_t * temp = make_matrix(l, l);
+		for(long i = 0; i < l; i++) {
+			for(long j = 0; j < l; j++) {
+				mpc_set_d(get_matrix(temp, j, i), (rand() % 2000 / 1000.0 - 1.0), MPC_RNDDD);
+			}
 		}
+
+		clock_t start = clock();
+		matrix_t * pmet = inverse_matrix(temp);
+		clock_t end = clock();
+		printf("Inverse time for %ld,%ld matrix: %ld\n", l, l, end - start);
+
+		matrix_t * ident = mult_matrix(temp, pmet);
+
+		//printf("Temp: \n");
+		//print_matrix(temp);
+
+		//printf("pmeT: \n");
+		//print_matrix(pmet);
+
+		//printf("Ident: \n");
+		//print_matrix(ident);
+
+		destroy_matrix(temp);
+		destroy_matrix(pmet);
+		destroy_matrix(ident);
 	}
 
-	clock_t start = clock();
-	matrix_t * pmet = inverse_matrix(temp);
-	clock_t end = clock();
-	printf("Inverse time for %ld,%ld matrix: %ld\n", l, l, end - start);
 
-	matrix_t * ident = mult_matrix(temp, pmet);
 
-	//printf("Temp: \n");
-	//print_matrix(temp);
 
-	//printf("pmeT: \n");
-	//print_matrix(pmet);
+	/*
+	matrix_t * A = make_matrix(3, 3);
+	mpc_set_d(get_matrix(A, 0, 0), 2.0, MPC_RNDDD);
+	mpc_set_d(get_matrix(A, 1, 0), 3.0, MPC_RNDDD);
+	mpc_set_d(get_matrix(A, 2, 0), 5.0, MPC_RNDDD);
 
-	//printf("Ident: \n");
-	//print_matrix(ident);
+	mpc_set_d(get_matrix(A, 0, 1), 7.0, MPC_RNDDD);
+	mpc_set_d(get_matrix(A, 1, 1), 11.0, MPC_RNDDD);
+	mpc_set_d(get_matrix(A, 2, 1), 13.0, MPC_RNDDD);
 
-	destroy_matrix(temp);
-	destroy_matrix(pmet);
+	mpc_set_d(get_matrix(A, 0, 2), 17.0, MPC_RNDDD);
+	mpc_set_d(get_matrix(A, 1, 2), 19.0, MPC_RNDDD);
+	mpc_set_d(get_matrix(A, 2, 2), 23.0, MPC_RNDDD);
+
+
+	matrix_t * iA = inverse_matrix(A);
+
+	matrix_t * ident = mult_matrix(A, iA);
+
+
+	printf("A:\n");
+	print_matrix(A);
+
+	printf("iA:\n");
+	print_matrix(iA);
+
+	printf("ident:\n");
+	print_matrix(ident);
+
+
+	destroy_matrix(A);
+	destroy_matrix(iA);
 	destroy_matrix(ident);
-	}
+	*/
+
+
+
 	return 0;
 }
