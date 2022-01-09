@@ -1,0 +1,399 @@
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+
+
+typedef struct {
+    
+    // Maximum number of items that the ArrayList can hold
+    unsigned long capacity;
+    
+    // Number ot items currently in the ArrayList
+    unsigned long count;
+    
+    // Indicies of the current start and end of the data in the ArrayList
+    unsigned long head;
+    unsigned long tail;
+    
+    
+    // Size of each item in the ArrayList, in bytes.
+    unsigned long size;
+    
+    // Block of memory that contains the data of the ArrayList
+    void * data;
+    
+    
+    // NOTES:
+    //   Count should ALWAYS be less than capacity.
+    //   If the data wraps around the edges of the data block, then: tail <= head, otherwise, head <= tail
+    //   With an empty or full list, head == tail
+    // Data continuity: head -> tail, unless data wraps (head <= tail && count > 0), then head -> Capacity, 0 -> tail
+    
+} ArrayList_t;
+
+static const unsigned long ARRAYLIST_MINIMUM_CAPACITY = 16;
+
+#define min(a,b) \
+   ({ __typeof__ (a) _a = (a); \
+       __typeof__ (b) _b = (b); \
+     _a <= _b ? _a : _b; })
+
+#define max(a,b) \
+   ({ __typeof__ (a) _a = (a); \
+       __typeof__ (b) _b = (b); \
+     _a > _b ? _a : _b; })
+
+
+
+ArrayList_t * create_ArrayList(unsigned long size, unsigned long init_capacity);
+void destroy_ArrayList(ArrayList_t * arr);
+
+void init_ArrayList(ArrayList_t * arr, unsigned long size, unsigned long init_capacity);
+void clear_ArrayList(ArrayList_t * arr);
+
+void resize_ArrayList(ArrayList_t * arr, unsigned long new_capacity);
+
+void copy_ArrayList(ArrayList_t * dst, ArrayList_t * src);
+
+void * pointerTo_ArrayList(ArrayList_t * arr, unsigned long index);
+
+void put_ArrayList(ArrayList_t * arr, void * data, int index);
+void get_ArrayList(ArrayList_t * arr, void * data, int index);
+
+void toArray_ArrayList(ArrayList_t * arr, void * data, unsigned long index, unsigned long num);
+void fromArray_ArrayList(ArrayList_t * arr, void * data, unsigned long index, unsigned long num);
+
+void pushFront_ArrayList(ArrayList_t * arr, void * data);
+void popFront_ArrayList(ArrayList_t * arr, void * data);
+
+void pushBack_ArrayList(ArrayList_t * arr, void * data);
+void popBack_ArrayList(ArrayList_t * arr, void * data);
+
+
+// Map, takes each item in the list, and changes it to a new item in a new list.
+// Special considerations must be made if dst is the same as src
+void map_ArrayList(ArrayList_t * dst, ArrayList_t * src, void(*func)(void *, void *) ); // void func(Thing dst, Thing src)
+
+// Reduce, takes each item in the list, with an accumulator, and reduces items into accumulator.
+void reduce_ArrayList(void * dst, ArrayList_t * src, void(*func)(void *, void *)); // Thing func(Thing A, Thing accumulator) -> accumulator
+
+// Sort, sorts list into new list with given function
+// Special considerations must be made if dst is the same as src
+void sort_ArrayList(ArrayList_t * dst, ArrayList_t * src, int(*func)(const void*, const void*)); // int func(Thing A, Thing B)
+
+
+
+
+
+
+
+
+
+
+
+void printDouble_ArrayList(void * dst, void * src) {
+    
+    double * A = (double *) src;
+    
+    printf("%g\n", *A);
+    
+}
+
+int compareDouble_ArrayList(const void * A, const void * B) {
+    
+    return *((double *)A) >= *((double *)B);
+}
+
+void sumDouble_ArrayList(void * dst, void * src) {
+    
+    double * A = (double *) src;
+    double * B = (double *) dst;
+    
+    *B += *A;
+}
+
+
+
+int main()
+{
+    printf("Hello World\n");
+    
+    ArrayList_t temp = {0};
+    init_ArrayList(&temp, sizeof(double), 128);
+    
+    unsigned long num = rand() % 100;
+    
+    for(unsigned long i = 0; i < num; i++) {
+        
+        double rng = (double)(rand() % 1000000) / 1000.0;
+        
+        pushBack_ArrayList(&temp, &rng);
+        
+    }
+    
+    printf("Initial List: %ld\n", temp.count);
+    
+    map_ArrayList(NULL, &temp, printDouble_ArrayList);
+    
+    
+    printf("Sorted List: %ld\n", temp.count);
+    
+    sort_ArrayList(&temp, &temp, compareDouble_ArrayList);
+    
+    map_ArrayList(NULL, &temp, printDouble_ArrayList);
+    
+    
+    
+    
+    
+    
+    double sum = 0.0;
+    
+    reduce_ArrayList(&sum, &temp, sumDouble_ArrayList);
+    
+    printf("Sum: %g\n", sum);
+    
+    printf("Average: %g\n", sum / (double)temp.count);
+    
+    clear_ArrayList(&temp);
+    
+    return 0;
+}
+
+
+
+
+
+ArrayList_t * create_ArrayList(unsigned long size, unsigned long init_capacity) {
+    
+    ArrayList_t * rtn = (ArrayList_t * ) malloc(sizeof(ArrayList_t));
+    init_ArrayList(rtn, size, init_capacity);
+    return rtn;
+}
+
+void destroy_ArrayList(ArrayList_t * arr) {
+    
+    clear_ArrayList(arr);
+    free(arr);
+}
+
+void init_ArrayList(ArrayList_t * arr, unsigned long size, unsigned long init_capacity) {
+    
+    arr->capacity = max(init_capacity, ARRAYLIST_MINIMUM_CAPACITY);
+    arr->count = 0;
+    arr->head = 0;
+    arr->tail = 0;
+    arr->size = size;
+    arr->data = malloc(size * arr->capacity);
+}
+
+void clear_ArrayList(ArrayList_t * arr) {
+    
+    arr->capacity = 0;
+    arr->count = 0;
+    arr->head = 0;
+    arr->tail = 0;
+    arr->size = 0;
+    if (arr->data) free(arr->data);
+    arr->data = NULL;
+    
+}
+
+void resize_ArrayList(ArrayList_t * arr, unsigned long new_capacity) {
+    
+    char tmp[arr->count * arr->size];
+    toArray_ArrayList(arr, tmp, 0, arr->count);
+    arr->capacity = new_capacity;
+    arr->data = realloc(arr->data, arr->size * arr->capacity);
+    fromArray_ArrayList(arr, tmp, 0, arr->count);
+}
+
+void copy_ArrayList(ArrayList_t * dst, ArrayList_t * src) {
+    
+    clear_ArrayList(dst);
+    dst->capacity = src->capacity;
+    dst->count = src->count;
+    dst->head = src->count;
+    dst->tail = src->tail;
+    dst->data = malloc(src->size * src->capacity);
+    memcpy(dst->data, src->data, src->size * src->capacity);
+}
+
+
+
+void * pointerTo_ArrayList(ArrayList_t * arr, unsigned long index) {
+    
+    if (arr == NULL) return NULL;
+    
+    return arr->data + (((arr->head + index) % arr->capacity) * arr->size);
+    
+}
+
+void put_ArrayList(ArrayList_t * arr, void * data, int index) {
+    
+    memcpy(pointerTo_ArrayList(arr, index), data, arr->size);
+    
+}
+
+void get_ArrayList(ArrayList_t * arr, void * data, int index) {
+    
+    memcpy(data, pointerTo_ArrayList(arr, index), arr->size);
+    
+}
+
+// Writes data from ArrayList into void * data.
+void toArray_ArrayList(ArrayList_t * arr, void * data, unsigned long index, unsigned long num) {
+    
+    // (index + num) < arr->count
+    
+    if (arr->count > 0) {
+        
+        unsigned long start = (arr->head + index) % arr->capacity;
+        unsigned long end = (start + num) % arr->capacity;
+        
+        if (start < end) {
+            
+            memcpy(data, arr->data + (start * arr->size), num * arr->size);
+            
+        } else {
+            
+            memcpy(data, arr->data + (start * arr->size), (arr->capacity - start) * arr->size);
+            memcpy(data + ((arr->capacity - start) * arr->size), arr->data, end * arr->size);
+            
+        }
+        
+    }
+    
+}
+
+// Writes data from void * data into ArrayList
+void fromArray_ArrayList(ArrayList_t * arr, void * data, unsigned long index, unsigned long num) {
+    
+    arr->count = num;
+    
+    arr->head = 0;
+    arr->tail = num;
+    
+    memcpy(arr->data, data + (index * arr->size), num * arr->size);
+    
+}
+
+void pushFront_ArrayList(ArrayList_t * arr, void * data) {
+    
+    // If arraylist is full, double capacity
+    if (arr->count == arr->capacity) {
+        
+        resize_ArrayList(arr, arr->capacity * 2);
+        
+    }
+    
+    
+    arr->head--;
+    if (arr->head < 0) arr->head += arr->capacity;
+    
+    put_ArrayList(arr, data, arr->head);
+    
+    arr->count++;
+    
+    
+    
+}
+void popFront_ArrayList(ArrayList_t * arr, void * data) {
+    
+    get_ArrayList(arr, data, arr->head);
+    
+    arr->head++;
+    if (arr->head >= arr->capacity) arr->head -= arr->capacity;
+    
+    arr->count--;
+    
+    // If arraylist is almost empty, half the capacity
+    if (arr->count * 4 <= arr->capacity && arr->capacity > ARRAYLIST_MINIMUM_CAPACITY) {
+        
+        resize_ArrayList(arr, max(arr->capacity / 2, ARRAYLIST_MINIMUM_CAPACITY));
+        
+    }
+    
+}
+
+void pushBack_ArrayList(ArrayList_t * arr, void * data) {
+    
+    // If arraylist is full, double capacity
+    if (arr->count == arr->capacity) {
+        
+        resize_ArrayList(arr, arr->capacity * 2);
+        
+    }
+    
+    put_ArrayList(arr, data, arr->tail);
+    
+    arr->tail++;
+    if (arr->tail >= arr->capacity) arr->tail -= arr->capacity;
+    
+    arr->count++;
+    
+    
+    
+}
+void popBack_ArrayList(ArrayList_t * arr, void * data) {
+    
+    arr->tail--;
+    if (arr->tail < 0) arr->tail += arr->capacity;
+    
+    get_ArrayList(arr, data, arr->tail);
+    
+    arr->count--;
+    
+     // If arraylist is almost empty, half the capacity
+    if (arr->count * 4 <= arr->capacity && arr->capacity > ARRAYLIST_MINIMUM_CAPACITY) {
+        
+        resize_ArrayList(arr, max(arr->capacity / 2, ARRAYLIST_MINIMUM_CAPACITY));
+        
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+void map_ArrayList(ArrayList_t * dst, ArrayList_t * src, void(*func)(void *, void*)) {
+    
+    for(int i = 0; i < src->count; i++) {
+        
+        func(pointerTo_ArrayList(dst, i), pointerTo_ArrayList(src, i));
+        
+    }
+    
+}
+
+void reduce_ArrayList(void * dst, ArrayList_t * src, void(*func)(void *, void *)) {
+    
+    for(int i = 0; i < src->count; i++) {
+        
+        func(dst, src->data + ((src->head + i) % src->capacity) * src->size);
+        
+    }
+    
+}
+
+
+void sort_ArrayList(ArrayList_t * dst, ArrayList_t * src, int(*func)(const void*, const void*)) {
+    
+    char tmp[src->count * src->size];
+    
+    toArray_ArrayList(src, tmp, 0, src->count);
+    
+    qsort(tmp, src->count, src->size, func);
+    
+    fromArray_ArrayList(dst, tmp, 0, src->count);
+    
+}
+
+
