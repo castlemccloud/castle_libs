@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-
+#include <time.h>
 
 typedef struct {
     
@@ -72,19 +72,16 @@ void popBack_ArrayList(ArrayList_t * arr, void * data);
 
 
 // Map, takes each item in the list, and changes it to a new item in a new list.
-// Special considerations must be made if dst is the same as src
 void map_ArrayList(ArrayList_t * dst, ArrayList_t * src, void(*func)(void *, void *) ); // void func(Thing dst, Thing src)
 
 // Reduce, takes each item in the list, with an accumulator, and reduces items into accumulator.
-void reduce_ArrayList(void * dst, ArrayList_t * src, void(*func)(void *, void *)); // Thing func(Thing A, Thing accumulator) -> accumulator
+void reduce_ArrayList(void * dst, ArrayList_t * src, void(*func)(void *, void *)); // Thing func(Thing accumulator, Thing A); acc += A
 
 // Sort, sorts list into new list with given function
-// Special considerations must be made if dst is the same as src
 void sort_ArrayList(ArrayList_t * dst, ArrayList_t * src, int(*func)(const void*, const void*)); // int func(Thing A, Thing B)
 
-
-
-
+// Filter, passes all items in src to dst that pass the check [ func (item, cmp) != 0 ]
+void filter_ArrayList(ArrayList_t * dst, ArrayList_t * src, int(*func)(const void*, const void*), void* cmp);
 
 
 
@@ -100,9 +97,25 @@ void printDouble_ArrayList(void * dst, void * src) {
     
 }
 
-int compareDouble_ArrayList(const void * A, const void * B) {
+void squareDouble_ArrayList(void * dst, void * src) {
+    
+    
+    double A = *((double *) src);
+    double * B = (double *) dst;
+    
+    *B = (A * A);
+    
+}
+
+int compareDoubleGreaterEqual_ArrayList(const void * A, const void * B) {
     
     return *((double *)A) >= *((double *)B);
+}
+
+int compareDoubleLessThan_ArrayList(const void * A, const void * B) {
+    
+    return *((double *)A) < *((double *)B);
+    
 }
 
 void sumDouble_ArrayList(void * dst, void * src) {
@@ -117,6 +130,9 @@ void sumDouble_ArrayList(void * dst, void * src) {
 
 int main()
 {
+    
+    srand(time(NULL));
+    
     printf("Hello World\n");
     
     ArrayList_t temp = {0};
@@ -133,18 +149,38 @@ int main()
     }
     
     printf("Initial List: %ld\n", temp.count);
-    
     map_ArrayList(NULL, &temp, printDouble_ArrayList);
     
+    
+    ArrayList_t temp2 = {0};
+    copy_ArrayList(&temp2, &temp);
+    
+    printf("Copy of List: %ld\n", temp2.count);
+    map_ArrayList(NULL, &temp2, printDouble_ArrayList);
+    
+    clear_ArrayList(&temp2);
+    
+    
+    sort_ArrayList(&temp, &temp, compareDoubleGreaterEqual_ArrayList);
     
     printf("Sorted List: %ld\n", temp.count);
-    
-    sort_ArrayList(&temp, &temp, compareDouble_ArrayList);
-    
     map_ArrayList(NULL, &temp, printDouble_ArrayList);
     
     
+    double lower = 250.0;
+    double upper = 750.0;
     
+    filter_ArrayList(&temp, &temp, compareDoubleGreaterEqual_ArrayList, &lower);
+    filter_ArrayList(&temp, &temp, compareDoubleLessThan_ArrayList, &upper);
+    
+    printf("Filtered List: %ld\n", temp.count);
+    map_ArrayList(NULL, &temp, printDouble_ArrayList);
+    
+    
+    map_ArrayList(&temp, &temp, squareDouble_ArrayList);
+    
+    printf("Squared List: %ld\n", temp.count);
+    map_ArrayList(NULL, &temp, printDouble_ArrayList);
     
     
     
@@ -214,8 +250,9 @@ void copy_ArrayList(ArrayList_t * dst, ArrayList_t * src) {
     clear_ArrayList(dst);
     dst->capacity = src->capacity;
     dst->count = src->count;
-    dst->head = src->count;
+    dst->head = src->head;
     dst->tail = src->tail;
+    dst->size = src->size;
     dst->data = malloc(src->size * src->capacity);
     memcpy(dst->data, src->data, src->size * src->capacity);
 }
@@ -356,13 +393,6 @@ void popBack_ArrayList(ArrayList_t * arr, void * data) {
 
 
 
-
-
-
-
-
-
-
 void map_ArrayList(ArrayList_t * dst, ArrayList_t * src, void(*func)(void *, void*)) {
     
     for(int i = 0; i < src->count; i++) {
@@ -393,6 +423,30 @@ void sort_ArrayList(ArrayList_t * dst, ArrayList_t * src, int(*func)(const void*
     qsort(tmp, src->count, src->size, func);
     
     fromArray_ArrayList(dst, tmp, 0, src->count);
+    
+}
+
+
+void filter_ArrayList(ArrayList_t * dst, ArrayList_t * src, int(*func)(const void*, const void*), void* cmp) {
+    
+    ArrayList_t tmp = {0};
+    init_ArrayList(&tmp, src->size, src->capacity);
+    
+    for(int i = 0; i < src->count; i++) {
+        
+        void * target = pointerTo_ArrayList(src, i);
+        
+        if (func(target, cmp)) {
+            
+            pushBack_ArrayList(&tmp, target);
+            
+        }
+        
+    }
+    
+    copy_ArrayList(dst, &tmp);
+    
+    clear_ArrayList(&tmp);
     
 }
 
