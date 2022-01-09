@@ -83,9 +83,11 @@ void sort_ArrayList(ArrayList_t * dst, ArrayList_t * src, int(*func)(const void*
 // Filter, passes all items in src to dst that pass the check [ func (item, cmp) != 0 ]
 void filter_ArrayList(ArrayList_t * dst, ArrayList_t * src, int(*func)(const void*, const void*), void* cmp);
 
+// Adds every item from src onto the end of dst
+void append_ArrayList(ArrayList_t * dst, ArrayList_t * src);
 
-
-
+// Takes a list of lists (src) and appends all items to dst
+void aggregate_ArrayList(ArrayList_t * dst, ArrayList_t * src);
 
 
 
@@ -138,7 +140,7 @@ int main()
     ArrayList_t temp = {0};
     init_ArrayList(&temp, sizeof(double), 128);
     
-    unsigned long num = rand() % 100;
+    unsigned long num = rand() % 1000;
     
     for(unsigned long i = 0; i < num; i++) {
         
@@ -157,6 +159,10 @@ int main()
     
     printf("Copy of List: %ld\n", temp2.count);
     map_ArrayList(NULL, &temp2, printDouble_ArrayList);
+    
+    
+    append_ArrayList(&temp, &temp2);
+    
     
     clear_ArrayList(&temp2);
     
@@ -370,9 +376,8 @@ void pushBack_ArrayList(ArrayList_t * arr, void * data) {
     
     arr->count++;
     
-    
-    
 }
+
 void popBack_ArrayList(ArrayList_t * arr, void * data) {
     
     arr->tail--;
@@ -407,7 +412,7 @@ void reduce_ArrayList(void * dst, ArrayList_t * src, void(*func)(void *, void *)
     
     for(int i = 0; i < src->count; i++) {
         
-        func(dst, src->data + ((src->head + i) % src->capacity) * src->size);
+        func(dst, pointerTo_ArrayList(src, i));
         
     }
     
@@ -449,6 +454,21 @@ void filter_ArrayList(ArrayList_t * dst, ArrayList_t * src, int(*func)(const voi
     clear_ArrayList(dst);
     
     *dst = tmp;
+    
+}
+
+void append_ArrayList(ArrayList_t * dst, ArrayList_t * src) {
+    
+    resize_ArrayList(dst, (dst->count + src->count) * 1.5);
+    
+    toArray_ArrayList(src, pointerTo_ArrayList(dst, dst->tail), 0, src->count);
+    dst->count += src->count;
+    dst->tail += src->count;
+}
+
+void aggregate_ArrayList(ArrayList_t * dst, ArrayList_t * src) {
+    
+    reduce_ArrayList(dst, src, append_ArrayList);
     
 }
 
