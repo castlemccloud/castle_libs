@@ -399,10 +399,11 @@ void popBack_ArrayList(ArrayList_t * arr, void * data) {
 
 void map_ArrayList(ArrayList_t * dst, ArrayList_t * src, void(*func)(void *, void*)) {
     
-    resize_ArrayList(dst, src->capacity); 
-    
-    dst->tail = dst->head + src->count;
-    dst->count = src->count;
+    if (dst != NULL && dst != src) {
+        dst->head = 0;
+        dst->tail = src->count;
+        dst->count = src->count;
+    }
     
     for(int i = 0; i < src->count; i++) {
         
