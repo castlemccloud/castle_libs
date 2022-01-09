@@ -444,6 +444,8 @@ void filter_ArrayList(ArrayList_t * dst, ArrayList_t * src, int(*func)(const voi
         
     }
     
+    resize_ArrayList(&tmp, tmp.count * 1.5);
+    
     copy_ArrayList(dst, &tmp);
     
     clear_ArrayList(&tmp);
