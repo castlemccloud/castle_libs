@@ -253,7 +253,6 @@ void resize_ArrayList(ArrayList_t * arr, unsigned long new_capacity) {
 
 void copy_ArrayList(ArrayList_t * dst, ArrayList_t * src) {
     
-    clear_ArrayList(dst);
     dst->capacity = src->capacity;
     dst->count = src->count;
     dst->head = src->head;
@@ -400,6 +399,11 @@ void popBack_ArrayList(ArrayList_t * arr, void * data) {
 
 void map_ArrayList(ArrayList_t * dst, ArrayList_t * src, void(*func)(void *, void*)) {
     
+    resize_ArrayList(dst, src->capacity); 
+    
+    dst->tail = dst->head + src->count;
+    dst->count = src->count;
+    
     for(int i = 0; i < src->count; i++) {
         
         func(pointerTo_ArrayList(dst, i), pointerTo_ArrayList(src, i));
@@ -468,7 +472,24 @@ void append_ArrayList(ArrayList_t * dst, ArrayList_t * src) {
 
 void aggregate_ArrayList(ArrayList_t * dst, ArrayList_t * src) {
     
-    reduce_ArrayList(dst, src, append_ArrayList);
+    int new_count = 0;
+    for(int i = 0; i < src->count; i++) {
+        
+        ArrayList_t * tmp = pointerTo(src, i);
+        new_count += tmp->count;
+    }
+    
+    resize_ArrayList(dst, (dst->count + new_count) * 1.5);
+    
+    for(int i = 0; i < src->count; i++) {
+        
+        ArrayList_t * tmp = pointerTo(src, i);
+        
+        toArray_ArrayList(tmp, pointerTo_ArrayList(dst, dst->tail), 0, tmp->count);
+        dst->count += tmp->count;
+        dst->tail += tmp->count;
+        
+    }
     
 }
 
