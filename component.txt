@@ -189,7 +189,7 @@ void comp_update_DOONCE(const component_base_t * comp) {
 
 static const comp_info_t COMP_INFO_DOONCE = {
   
-  COMP_AND,
+  COMP_DOONCE,
   
   1,
   "input",
