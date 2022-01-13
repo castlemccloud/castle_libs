@@ -140,27 +140,70 @@ static const comp_info_t COMP_INFO_AND = {
 
 
 
+typedef struct {
+    
+    char * A;
+    
+} comp_input_DOONCE;
 
+typedef struct {
+    
+    char A;
+    char B;
+    
+} comp_output_DOONCE;
 
-void comp_func_DOONCE(component_base_t * comp) {
+void comp_update_DOONCE(const component_base_t * comp) {
     
-    // Input A
+    comp_input_DOONCE * inputs = (comp_input_AND *) comp->inputs;
+    comp_output_DOONCE * outputs = (comp_output_AND *) comp->buffer;
     
-    // Output A
-    // Output B
+    char * input_A = inputs->A;
     
-    // If Input A and Not Output A
-    //    Output A
-    //    Output B
-    // Else if Input A and Output A
-    //    Output A
-    //    Output !B
-    // Else 
-    //    Output !A
-    //    Output !B
+    if (input_A != NULL) {
+        
+        if (*input_A != 0) {
+            
+            if (outputs->A == 0) {
+                outputs->A = 1;
+                outputs->B = 1;
+            } else {
+                outputs->A = 1;
+                outputs->B = 0;
+            }
+            
+        } else {
+            
+            outputs->A = 0;
+            outputs->B = 0;
+            
+        }
+        
+    } else {
+        outputs->A = 0;
+        outputs->B = 0;
+    }
     
     
 }
+
+static const comp_info_t COMP_INFO_DOONCE = {
+  
+  COMP_AND,
+  
+  2,
+  "A\nB",
+  
+  1,
+  "A & B",
+  
+  sizeof(comp_input_DOONCE),
+  sizeof(comp_output_DOONCE),
+  
+  &comp_update_DOONCE
+  
+};
+
 
 
 
