@@ -191,11 +191,11 @@ static const comp_info_t COMP_INFO_DOONCE = {
   
   COMP_AND,
   
-  2,
-  "A\nB",
+  1,
+  "input",
   
   1,
-  "A & B",
+  "output",
   
   sizeof(comp_input_DOONCE),
   sizeof(comp_output_DOONCE),
