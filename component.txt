@@ -1,0 +1,189 @@
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+enum COMPONENT_TYPE {COMP_AND, COMP_OR, COMP_NOT, COMP_XOR, COMP_DOONCE};
+
+struct __comp_t;
+
+typedef struct {
+    
+    enum COMPONENT_TYPE comp_type;
+    
+    int input_terminals;
+    char * input_terminal_names;
+    
+    int output_terminals;
+    char * output_terminal_names;
+    
+    unsigned long input_size;
+    unsigned long output_size;
+    
+    void (*update_func)(const struct __comp_t * comp);
+    
+} comp_info_t;
+
+typedef struct __comp_t {
+    
+    const comp_info_t * info;
+    
+    void * inputs;
+    
+    void * buffer;
+    void * outputs;
+    
+} component_base_t;
+
+
+
+
+
+
+void update_component(const component_base_t * comp) {
+    comp->info->update_func(comp);
+}
+
+void present_component(const component_base_t * comp) {
+    memcpy(comp->outputs, comp->buffer, comp->info->output_size);
+}
+
+component_base_t * create_component_base(const comp_info_t * info) {
+    
+    component_base_t * rtn = (component_base_t *) malloc(sizeof(component_base_t));
+    
+    rtn->info = info;
+    
+    rtn->inputs = (void *) malloc(info->input_size);
+    
+    rtn->buffer = (void *) malloc(info->output_size);
+    rtn->outputs = (void *) malloc(info->output_size);
+    
+    update_component(rtn);
+    present_component(rtn);
+    
+    return rtn;
+}
+
+void destroy_component_base(component_base_t * comp) {
+    
+    free(comp->outputs);
+    free(comp->buffer);
+    
+    free(comp->inputs);
+    
+    free(comp);
+}
+
+
+
+
+
+
+
+
+
+
+typedef struct {
+    
+    char * A;
+    char * B;
+    
+} comp_input_AND;
+
+typedef struct {
+    
+    char C;
+    
+} comp_output_AND;
+
+void comp_update_AND(const component_base_t * comp) {
+    
+    comp_input_AND * inputs = (comp_input_AND *) comp->inputs;
+    comp_output_AND * outputs = (comp_output_AND *) comp->buffer;
+    
+    char * A = inputs->A;
+    char * B = inputs->B;
+    
+    if ((A == NULL || B == NULL) || (*A == 0 || *B == 0)) {
+        
+        outputs->C = 0;
+        
+    } else {
+        
+        outputs->C = 1;
+        
+    }
+    
+}
+
+static const comp_info_t COMP_INFO_AND = {
+  
+  COMP_AND,
+  
+  2,
+  "A\nB",
+  
+  1,
+  "A & B",
+  
+  sizeof(comp_input_AND),
+  sizeof(comp_output_AND),
+  
+  &comp_update_AND
+  
+};
+
+
+
+
+
+
+
+
+
+void comp_func_DOONCE(component_base_t * comp) {
+    
+    // Input A
+    
+    // Output A
+    // Output B
+    
+    // If Input A and Not Output A
+    //    Output A
+    //    Output B
+    // Else if Input A and Output A
+    //    Output A
+    //    Output !B
+    // Else 
+    //    Output !A
+    //    Output !B
+    
+    
+}
+
+
+
+/*
+void connect (component_base_t * A, int terminal_A, component_base_t * B, int terminal_B) {
+  Check if that connection is valid (lookup table probably)
+  Add appropriate pointers
+  
+*/
+
+
+int main()
+{
+    printf("Hello World");
+    
+    
+    component_base_t * basic_and = create_component_base(&COMP_INFO_AND);
+    
+    
+    
+    
+    
+    
+    
+    return 0;
+}
