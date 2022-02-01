@@ -3,9 +3,9 @@ CFLAGS = -Wall -O3
 SDL = `sdl2-config --cflags --libs`
 CLIBS = -lm -fopenmp
 
-all: main
+all: main.out
 
-main: main.o
+main.out: main.o
 	$(CC) $(CFLAGS) -o $@ $^ $(CLIBS) $(SDL)
 
 main.o: main.c raster.h Makefile
@@ -15,4 +15,3 @@ main.o: main.c raster.h Makefile
 clean:
 	rm -f *.o
 	rm -f *.out
-	rm -rf main

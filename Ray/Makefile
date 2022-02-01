@@ -1,9 +1,9 @@
 CC = g++
 CFLAGS = -Wall -O3
 
-all: main
+all: main.out
 
-main: main.o btree.o
+main.out: main.o btree.o
 	$(CC) $(CFLAGS) -o $@ $^ -fopenmp -lm `sdl2-config --cflags --libs`
 
 main.o: main.cpp btree.h tiny_obj_loader.h Makefile
@@ -15,4 +15,3 @@ btree.o: btree.c btree.h Makefile
 clean:
 	rm -f *.o
 	rm -f *.out
-	rm -rf main
