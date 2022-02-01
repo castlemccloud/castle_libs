@@ -1,4 +1,4 @@
-CFLAGS = -std=c++17 -O3
+CFLAGS = -std=c++17 -O3 -pg
 LDFLAGS = -lglfw -lvulkan -ldl -lpthread -lX11 -lXxf86vm -lXrandr -lXi
 
 VulkanTest: main.cpp
