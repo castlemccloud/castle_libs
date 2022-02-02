@@ -17,6 +17,44 @@ typedef struct {
 
 
 
+
+
+/*
+
+// rotate target vector [x, y, z, 1], 
+// around the point [A, B, C], by [roll, yaw, pitch]
+	
+	// Matrix:
+	
+	{
+		{Cos[pitch] Cos[yaw], -Cos[roll] Sin[pitch] + Cos[pitch] Sin[roll] Sin[yaw], Sin[pitch] Sin[roll] + Cos[pitch] Cos[roll] Sin[yaw], 0},
+		{Cos[yaw] Sin[pitch], Cos[pitch] Cos[roll] + Sin[pitch] Sin[roll] Sin[yaw], -Cos[pitch] Sin[roll] + Cos[roll] Sin[pitch] Sin[yaw], 0},
+		{-Sin[yaw], Cos[yaw] Sin[roll], Cos[roll] Cos[yaw], 0},
+		{A - A Cos[pitch] Cos[yaw] - B Cos[yaw] Sin[pitch] + C Sin[yaw], B - C Cos[yaw] Sin[roll] - A (-Cos[roll] Sin[pitch] + Cos[pitch] Sin[roll] Sin[yaw]) - B (Cos[pitch] Cos[roll] + Sin[pitch] Sin[roll] Sin[yaw]), C - C Cos[roll] Cos[yaw] - A (Sin[pitch] Sin[roll] + Cos[pitch] Cos[roll] Sin[yaw]) - B (-Cos[pitch] Sin[roll] + Cos[roll] Sin[pitch] Sin[yaw]), 1}
+	}
+	
+	
+	// Result:
+
+	{
+		A - A Cos[pitch] Cos[yaw] + x Cos[pitch] Cos[yaw] - B Cos[yaw] Sin[pitch] + y Cos[yaw] Sin[pitch] + C Sin[yaw] - z Sin[yaw], 
+		B - C Cos[yaw] Sin[roll] + z Cos[yaw] Sin[roll] - A (-Cos[roll] Sin[pitch] + Cos[pitch] Sin[roll] Sin[yaw]) + x (-Cos[roll] Sin[pitch] + Cos[pitch] Sin[roll] Sin[yaw]) - B (Cos[pitch] Cos[roll] + Sin[pitch] Sin[roll] Sin[yaw]) + y (Cos[pitch] Cos[roll] + Sin[pitch] Sin[roll] Sin[yaw]),
+		C - C Cos[roll] Cos[yaw] + z Cos[roll] Cos[yaw] - A (Sin[pitch] Sin[roll] + Cos[pitch] Cos[roll] Sin[yaw]) + x (Sin[pitch] Sin[roll] + Cos[pitch] Cos[roll] Sin[yaw]) - B (-Cos[pitch] Sin[roll] + Cos[roll] Sin[pitch] Sin[yaw]) + y (-Cos[pitch] Sin[roll] + Cos[roll] Sin[pitch] Sin[yaw]),
+		1
+	}
+
+*/
+
+
+
+
+
+
+
+
+
+
+
 // Triangle must be in image space: [[0, hor_res],[0, ver_res]]
 void draw_triangle(unsigned int * pix_buf, float * depth_buf, long hor_res, long ver_res, triangle_t tri, unsigned int col) {
 	
@@ -133,30 +171,23 @@ void draw_triangle(unsigned int * pix_buf, float * depth_buf, long hor_res, long
 			
 			float z = (PNz - ((NxNz * x) + (NyNz * y)));
 			
-			long ind_x = (long) floor(x);
-			long ind_y = (long) floor(y);
+			long ind_x = (long) x;
+			long ind_y = (long) y;
 			long index = ind_x + (ind_y * hor_res);
 			
 			if (depth_buf[index] != NAN && z > depth_buf[index]) continue;
 			
 			depth_buf[index] = z;
+			
+			// Determine U, and V values
+			// sample texture:
+			
 			pix_buf[index] = col;
 			
 		}
 		
 	}
 	
-	
-	
-	
-	
-	
 }
-
-
-
-
-
-
 
 #endif

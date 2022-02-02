@@ -10,7 +10,7 @@
 #include "raster.h"
 
 
-
+#define to_color(a, r, g, b) ((unsigned int)(((a & 0xFF) << 24) | ((r & 0xFF) << 16) | ((g & 0xFF) << 8) | ((b & 0xFF))))
 
 
 int main() {
@@ -18,8 +18,8 @@ int main() {
 	printf("Hello, World!\n");
 	srand(time(NULL));
 	
-	long hor_res = 512;
-	long ver_res = 512;
+	long hor_res = 1440;
+	long ver_res = 960;
 	
 	long tri_count = 256;
 	
@@ -29,7 +29,7 @@ int main() {
 		unsigned int r = rand() % 0xFF;
 		unsigned int g = rand() % 0xFF;
 		unsigned int b = rand() % 0xFF;
-		tri_colors[i] = (a << 24) | (r << 16) | (g << 8) | b;
+		tri_colors[i] = to_color(a, r, g, b);
 	}
 	
 	
@@ -39,9 +39,9 @@ int main() {
 	
 	for(long i = 0; i < vert_count; i++) {
 		test_vert_list_pos[i] = {
-			((rand() % 512000) / 1000.0f),
-			((rand() % 512000) / 1000.0f),
-			((rand() % 512000) / 1000.0f)
+			((rand() % (hor_res * 1024)) / 1024.0f),
+			((rand() % (ver_res * 1024)) / 1024.0f),
+			((rand() % (ver_res * 1024)) / 1024.0f)
 		};
 
 		test_vert_list_vel[i] = {
@@ -58,8 +58,8 @@ int main() {
 	
 	printf("Init SDL!\n");
 	
-	int window_width = 512;
-	int window_height = 512;
+	int window_width = 720;
+	int window_height = 480;
 	
 	if (SDL_Init(SDL_INIT_VIDEO) != 0) {
 		printf("Failed to init SDL: %s\n", SDL_GetError());
@@ -140,6 +140,8 @@ int main() {
 	
 
 	while(loop) {
+		
+		clock_t start = clock();
 		
 		//printf("Frame!\n");
 		
@@ -250,7 +252,6 @@ int main() {
 			}
 		}
 		
-		
 		for(long i = 0; i < vert_count; i++) {
 			
 			vertex_t * vert_pos = test_vert_list_pos + i;
@@ -260,7 +261,7 @@ int main() {
 			if (vert_pos->x < 0.0f && vert_vel->x < 0.0f) {
 					vert_vel->x *= -1.0f;
 			}
-			if (vert_pos->x > 512.0f && vert_vel->x > 0.0f) {
+			if (vert_pos->x > hor_res && vert_vel->x > 0.0f) {
 					vert_vel->x *= -1.0f;
 			}
 			
@@ -268,7 +269,7 @@ int main() {
 			if (vert_pos->y < 0.0f && vert_vel->y < 0.0f) {
 					vert_vel->y *= -1.0f;
 			}
-			if (vert_pos->y > 512.0f && vert_vel->y > 0.0f) {
+			if (vert_pos->y > ver_res && vert_vel->y > 0.0f) {
 					vert_vel->y *= -1.0f;
 			}
 			
@@ -277,7 +278,7 @@ int main() {
 			if (vert_pos->z < 0.0f && vert_vel->z < 0.0f) {
 					vert_vel->z *= -1.0f;
 			}
-			if (vert_pos->z > 512.0f && vert_vel->z > 0.0f) {
+			if (vert_pos->z > ver_res && vert_vel->z > 0.0f) {
 					vert_vel->z *= -1.0f;
 			}
 		}
@@ -310,9 +311,6 @@ int main() {
 		
 		
 		// Render Frame
-		
-		clock_t start = clock();
-		
 		for(long i = 0; i < tri_count; i++) {
 			
 			triangle_t tmp = (triangle_t) {
@@ -327,9 +325,6 @@ int main() {
 			
 		}
 		
-		clock_t end = clock();
-		
-		printf("Frame time: %g\n", (float)(end - start) / (float) CLOCKS_PER_SEC);
 		
 		
 		
@@ -340,7 +335,12 @@ int main() {
 		SDL_RenderPresent(main_renderer);
 		frame_count++;
 		
-		//if (frame_count > 360) loop = 0;
+		clock_t end = clock();
+		
+		printf("Frame %d: %g\n", frame_count, (float)(end - start) / (float) CLOCKS_PER_SEC);
+		
+		
+		if (frame_count > 360) loop = 0;
 
 	}
 

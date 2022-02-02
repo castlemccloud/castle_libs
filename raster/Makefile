@@ -1,5 +1,5 @@
 CC = g++
-CFLAGS = -Wall -O3
+CFLAGS = -Wall -O0 -g
 SDL = `sdl2-config --cflags --libs`
 CLIBS = -lm -fopenmp
 
@@ -11,7 +11,11 @@ main.out: main.o
 main.o: main.c raster.h Makefile
 	$(CC) $(CFLAGS) -c $< $(CLIBS) $(SDL)
 
-
+test: main.out
+	valgrind --tool=callgrind --collect-jumps=yes --dump-instr=yes ./main.out
+	
 clean:
 	rm -f *.o
 	rm -f *.out
+
+
