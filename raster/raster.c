@@ -5,8 +5,69 @@
 #include <stdio.h>
 
 
-// Triangle must be in image space: [[-1, 1], [-1, 1], [0, 1]]
-void draw_triangle(unsigned int * pix_buf, float * depth_buf, long hor_res, long ver_res, triangle_t tri) {
+
+
+
+
+
+texture_t * load_texture(const char * texture_name) {
+	
+	texture_t * rtn = (texture_t *) malloc(sizeof(texture_t));
+	
+	int width, height, texChannels;
+	
+	unsigned char * pixels = stbi_load(texture_name, &(width), &(height), &(texChannels), STBI_rgb_alpha);
+	
+	rtn->width = width;
+	rtn->height = height;
+	rtn->pixels = (unsigned int *) pixels;
+	
+	for(unsigned long z = 0; z < (rtn->height * rtn->width); z++) {
+		
+		// Change from RGBA to ARGB
+		
+		unsigned int A = pixels[(z * 4) + 3];
+		unsigned int R = pixels[(z * 4) + 0];
+		unsigned int G = pixels[(z * 4) + 1];
+		unsigned int B = pixels[(z * 4) + 2];
+		
+		rtn->pixels[z] = argb_to_uint(A, R, G, B);
+	}
+	
+	return rtn;
+}
+
+void destroy_texture(texture_t * texture) {
+	free(texture->pixels);
+	free(texture);
+}
+
+
+unsigned int sample_texture(texture_t * texture, float u, float v) {
+	
+	// TODO : Implement interpolation
+	
+	unsigned long ind_x = (unsigned long) (u * texture->width);
+	unsigned long ind_y = (unsigned long) (v * texture->height);
+	unsigned long index = ind_x + (ind_y * texture->width);
+	
+	return texture->pixels[index];
+	
+}
+
+
+
+
+
+typedef struct {
+	
+	vertex_t A, B, C;
+	
+} render_target_triangle_t;
+
+
+
+void draw_triangle(unsigned int * pix_buf, float * depth_buf, long hor_res, long ver_res, render_target_triangle_t tri, texture_t * texture) {
 	
 	vertex_t A = tri.A;
 	vertex_t B = tri.B;
@@ -197,22 +258,43 @@ void draw_triangle(unsigned int * pix_buf, float * depth_buf, long hor_res, long
 			
 			depth_buf[index] = z;
 			
-			// float tex_u = ((1.0f - (u + v)) * A.u) + (u * B.u) + (v * C.u);
-			// float tex_v = ((1.0f - (u + v)) * A.u) + (u * B.u) + (v * C.u);
-			// unsigned int col = texture_sampler(texture, tex_u, tex_v);
+			float tex_u = ((1.0f - (u + v)) * A.u) + (u * B.u) + (v * C.u);
+			float tex_v = ((1.0f - (u + v)) * A.v) + (u * B.v) + (v * C.v);
+			// unsigned int col = sample_texture(texture, tex_u, tex_v);
 			
 			
-			
+			/*
 			unsigned int a = 0xFF;
 			unsigned int r = (unsigned int) floor(255.0f * (((1.0f - (u + v)) * A.r) + (u * B.r) + (v * C.r)));
 			unsigned int g = (unsigned int) floor(255.0f * (((1.0f - (u + v)) * A.g) + (u * B.g) + (v * C.g)));
 			unsigned int b = (unsigned int) floor(255.0f * (((1.0f - (u + v)) * A.b) + (u * B.b) + (v * C.b)));
+			*/
 			
-			
-			pix_buf[index] = argb_to_uint(a, r, g, b);
+			pix_buf[index] = sample_texture(texture, tex_u, tex_v);
 			
 		}
 		
 	}
 	
 }
+
+
+
+void render_model(unsigned int * pix_buf, float * depth_buf, long hor_res, long ver_res, model_t * model, texture_t * texture) {
+	
+	for(unsigned long i = 0; i < model->triangle_count; i++) {
+		
+		render_target_triangle_t tmp;
+		
+		tmp.A = model->vertex_list[model->triangle_list[i].A];
+		tmp.B = model->vertex_list[model->triangle_list[i].B];
+		tmp.C = model->vertex_list[model->triangle_list[i].C];
+		
+		draw_triangle(pix_buf, depth_buf, hor_res, ver_res, tmp, texture);
+	}
+	
+}
+
+
+
+

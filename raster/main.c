@@ -7,6 +7,7 @@
 #include <SDL2/SDL.h>
 #include <pthread.h>
 
+#define STB_IMAGE_IMPLEMENTATION
 #include "raster.h"
 
 
@@ -17,34 +18,6 @@
 
 
 
-typedef struct {
-	float x, y, z;
-} vec3_t;
-
-
-
-typedef struct {
-	vec3_t pos;
-	vec3_t tex;
-} vertex_t;
-
-
-
-typedef struct {
-	unsigned int A, B, C; // Indices into vertex_list
-} triangle_t;
-
-
-
-typedef struct {
-	unsigned int width;
-	unsigned int height;
-	unsigned int * pixels;
-} texture_t;
-
-texture_t * load_texture(const char * texture_name);
-void destroy_texture(texture_t * texture);
-
 
 
 typedef struct {
@@ -54,9 +27,6 @@ typedef struct {
 	unsigned int triangle_count;
 	triangle_t * triangle_list;
 } model_t;
-
-model_t * load_model(const char * model_name);
-void destroy_model(model_t * model);
 
 
 
@@ -103,30 +73,83 @@ int main() {
 	long hor_res = 2048;
 	long ver_res = 2048;
 	
-	long tri_count = 2048;
+	unsigned long vertex_count = 4;
+	vertex_t vertex_list[] = {
+		(vertex_t) { 
+			(((rand() % 65536) / 32768.0f) - 1.0f), 
+			(((rand() % 65536) / 32768.0f) - 1.0f), 
+			(((rand() % 65536) / 65536.0f)), 
+			(0.25f), (0.25f) 
+		},
+		
+		(vertex_t) { 
+			(((rand() % 65536) / 32768.0f) - 1.0f), 
+			(((rand() % 65536) / 32768.0f) - 1.0f), 
+			(((rand() % 65536) / 65536.0f)), 
+			(1.0f), (0.0f) 
+		},
+		
+		(vertex_t) { 
+			(((rand() % 65536) / 32768.0f) - 1.0f), 
+			(((rand() % 65536) / 32768.0f) - 1.0f), 
+			(((rand() % 65536) / 65536.0f)), 
+			(0.0f), (1.0f) 
+		},
+		
+		(vertex_t) { 
+			(((rand() % 65536) / 32768.0f) - 1.0f), 
+			(((rand() % 65536) / 32768.0f) - 1.0f), 
+			(((rand() % 65536) / 65536.0f)), 
+			(0.75f), (0.75f) 
+		}
+	};
 	
-	long vert_count = tri_count * 3;
-	vertex_t test_vert_list[vert_count];
-	vec3_t test_vert_list_vel[vert_count];
-	
-	for(long i = 0; i < vert_count; i++) {
-		test_vert_list[i] = {
-			((rand() % 65536) / 32768.0f) - 1.0f,	// X
-			((rand() % 65536) / 32768.0f) - 1.0f,	// Y
-			((rand() % 65536) / 65536.0f), 			// Z
-			((rand() % 65536) / 65536.0f),			// A
-			((rand() % 65536) / 65536.0f),			// R
-			((rand() % 65536) / 65536.0f),			// G
-			((rand() % 65536) / 65536.0f)			// B
-		};
-
-		test_vert_list_vel[i] = {
+	vec3_t vertex_list_vel[] = {
+		(vec3_t) {
 			(((rand() % 65536) / 32768.0f) - 1.0f) * 0.01f,
 			(((rand() % 65536) / 32768.0f) - 1.0f) * 0.01f,
 			(((rand() % 65536) / 32768.0f) - 1.0f) * 0.01f
-		};
-	}
+		},
+		
+		(vec3_t) {
+			(((rand() % 65536) / 32768.0f) - 1.0f) * 0.01f,
+			(((rand() % 65536) / 32768.0f) - 1.0f) * 0.01f,
+			(((rand() % 65536) / 32768.0f) - 1.0f) * 0.01f
+		},
+		
+		(vec3_t) {
+			(((rand() % 65536) / 32768.0f) - 1.0f) * 0.01f,
+			(((rand() % 65536) / 32768.0f) - 1.0f) * 0.01f,
+			(((rand() % 65536) / 32768.0f) - 1.0f) * 0.01f
+		},
+		
+		(vec3_t) {
+			(((rand() % 65536) / 32768.0f) - 1.0f) * 0.01f,
+			(((rand() % 65536) / 32768.0f) - 1.0f) * 0.01f,
+			(((rand() % 65536) / 32768.0f) - 1.0f) * 0.01f
+		}
+		
+	};
 	
+	
+	unsigned long triangle_count = 2;
+	triangle_t triangle_list[] = {
+		(triangle_t) {0, 1, 2},
+		(triangle_t) {1, 3, 2}
+	};
+	
+	
+	model_t render_target = {
+		
+		vertex_count,
+		vertex_list,
+		
+		triangle_count,
+		triangle_list
+		
+	};
+	
+	texture_t * texture = load_texture("Cropped_Image.png");
 	
 	
 	
@@ -328,10 +351,10 @@ int main() {
 			}
 		}
 		
-		for(long i = 0; i < vert_count; i++) {
+		for(unsigned long i = 0; i < vertex_count; i++) {
 			
-			vertex_t * vert_pos = test_vert_list + i;
-			vec3_t * vert_vel = test_vert_list_vel + i;
+			vertex_t * vert_pos = vertex_list + i;
+			vec3_t * vert_vel = vertex_list_vel + i;
 			
 			vert_pos->x += vert_vel->x;
 			if (vert_pos->x < -1.0f && vert_vel->x < 0.0f) {
@@ -393,21 +416,7 @@ int main() {
 		
 		
 		// Render Frame
-		for(long i = 0; i < tri_count; i++) {
-			
-			triangle_t tmp = (triangle_t) {
-				
-				test_vert_list[(i * 3) + 0],
-				test_vert_list[(i * 3) + 1],
-				test_vert_list[(i * 3) + 2]
-				
-			};
-			
-			draw_triangle(pixel_buffer, depth_buffer, hor_res, ver_res, tmp);
-			
-		}
-		
-		
+		render_model(pixel_buffer, depth_buffer, hor_res, ver_res, &render_target, texture);
 		
 		
 		// After rendering frame
@@ -422,7 +431,7 @@ int main() {
 		printf("Frame %d: %g\n", frame_count, (float)(end - start) / (float) CLOCKS_PER_SEC);
 		
 		
-		if (frame_count > 30) loop = 0;
+		//if (frame_count > 30) loop = 0;
 
 	}
 
@@ -433,6 +442,8 @@ int main() {
 	SDL_DestroyRenderer(main_renderer);
 	SDL_DestroyWindow(main_window);
 	SDL_Quit();
+	
+	destroy_texture(texture);
 	
 	return 0;
 }
