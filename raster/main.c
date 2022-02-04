@@ -10,44 +10,120 @@
 #include "raster.h"
 
 
-#define to_color(a, r, g, b) ((unsigned int)(((a & 0xFF) << 24) | ((r & 0xFF) << 16) | ((g & 0xFF) << 8) | ((b & 0xFF))))
 
+
+
+/*
+
+
+
+typedef struct {
+	float x, y, z;
+} vec3_t;
+
+
+
+typedef struct {
+	vec3_t pos;
+	vec3_t tex;
+} vertex_t;
+
+
+
+typedef struct {
+	unsigned int A, B, C; // Indices into vertex_list
+} triangle_t;
+
+
+
+typedef struct {
+	unsigned int width;
+	unsigned int height;
+	unsigned int * pixels;
+} texture_t;
+
+texture_t * load_texture(const char * texture_name);
+void destroy_texture(texture_t * texture);
+
+
+
+typedef struct {
+	unsigned int vertex_count;
+	vertex_t * vertex_list;
+	
+	unsigned int triangle_count;
+	triangle_t * triangle_list;
+} model_t;
+
+model_t * load_model(const char * model_name);
+void destroy_model(model_t * model);
+
+
+
+enum transform_type {TRANSFORM_TYPE_TRANSLATE, TRANSFORM_TYPE_ROTATE, TRANSFORM_TYPE_SCALE};
+
+typedef struct {
+	enum transform_type type;
+	unsigned int start_index;
+	unsigned int end_index;
+	vec3_t data;
+} transform_t;
+
+typedef struct {
+	model_t * model;
+	texture_t * texture;
+	
+	unsigned int transform_count;
+	transform_t * transform_list;
+} model_instance_t;
+
+model_instance_t * create_model_instance(...);
+void destroy_model_instance(model_instance_t * instance);
+void render_model_instance(pixel_buffer, depth_buffer, width, height, camera, model_instance_t);
+
+
+
+// Render model instance:
+//   Copy all model vertices
+//   Apply all instance transforms
+//   Camera transforms / projections
+//   Triangle Assembly / Culling
+//   Plane clipping
+//   Draw triangles
+
+
+
+*/
 
 int main() {
 	
 	printf("Hello, World!\n");
 	srand(time(NULL));
 	
-	long hor_res = 1440;
-	long ver_res = 960;
+	long hor_res = 2048;
+	long ver_res = 2048;
 	
-	long tri_count = 256;
-	
-	unsigned int tri_colors[tri_count];
-	for(int i = 0; i < tri_count; i++) {
-		unsigned int a = 0xFF;
-		unsigned int r = rand() % 0xFF;
-		unsigned int g = rand() % 0xFF;
-		unsigned int b = rand() % 0xFF;
-		tri_colors[i] = to_color(a, r, g, b);
-	}
-	
+	long tri_count = 2048;
 	
 	long vert_count = tri_count * 3;
-	vertex_t test_vert_list_pos[vert_count];
-	vertex_t test_vert_list_vel[vert_count];
+	vertex_t test_vert_list[vert_count];
+	vec3_t test_vert_list_vel[vert_count];
 	
 	for(long i = 0; i < vert_count; i++) {
-		test_vert_list_pos[i] = {
-			((rand() % (hor_res * 1024)) / 1024.0f),
-			((rand() % (ver_res * 1024)) / 1024.0f),
-			((rand() % (ver_res * 1024)) / 1024.0f)
+		test_vert_list[i] = {
+			((rand() % 65536) / 32768.0f) - 1.0f,	// X
+			((rand() % 65536) / 32768.0f) - 1.0f,	// Y
+			((rand() % 65536) / 65536.0f), 			// Z
+			((rand() % 65536) / 65536.0f),			// A
+			((rand() % 65536) / 65536.0f),			// R
+			((rand() % 65536) / 65536.0f),			// G
+			((rand() % 65536) / 65536.0f)			// B
 		};
 
 		test_vert_list_vel[i] = {
-			((rand() % 20000) / 10000.0f) - 1.0f,
-			((rand() % 20000) / 10000.0f) - 1.0f,
-			((rand() % 20000) / 10000.0f) - 1.0f
+			(((rand() % 65536) / 32768.0f) - 1.0f) * 0.01f,
+			(((rand() % 65536) / 32768.0f) - 1.0f) * 0.01f,
+			(((rand() % 65536) / 32768.0f) - 1.0f) * 0.01f
 		};
 	}
 	
@@ -58,8 +134,8 @@ int main() {
 	
 	printf("Init SDL!\n");
 	
-	int window_width = 720;
-	int window_height = 480;
+	int window_width = 512;
+	int window_height = 512;
 	
 	if (SDL_Init(SDL_INIT_VIDEO) != 0) {
 		printf("Failed to init SDL: %s\n", SDL_GetError());
@@ -254,32 +330,38 @@ int main() {
 		
 		for(long i = 0; i < vert_count; i++) {
 			
-			vertex_t * vert_pos = test_vert_list_pos + i;
-			vertex_t * vert_vel = test_vert_list_vel + i;
+			vertex_t * vert_pos = test_vert_list + i;
+			vec3_t * vert_vel = test_vert_list_vel + i;
 			
 			vert_pos->x += vert_vel->x;
-			if (vert_pos->x < 0.0f && vert_vel->x < 0.0f) {
-					vert_vel->x *= -1.0f;
+			if (vert_pos->x < -1.0f && vert_vel->x < 0.0f) {
+				vert_pos->x = -1.0f;
+				vert_vel->x *= -1.0f;
 			}
-			if (vert_pos->x > hor_res && vert_vel->x > 0.0f) {
-					vert_vel->x *= -1.0f;
+			if (vert_pos->x > 1.0f && vert_vel->x > 0.0f) {
+				vert_pos->x = 1.0f;
+				vert_vel->x *= -1.0f;
 			}
 			
 			vert_pos->y += vert_vel->y;
-			if (vert_pos->y < 0.0f && vert_vel->y < 0.0f) {
-					vert_vel->y *= -1.0f;
+			if (vert_pos->y < -1.0f && vert_vel->y < 0.0f) {
+				vert_pos->y = -1.0f;
+				vert_vel->y *= -1.0f;
 			}
-			if (vert_pos->y > ver_res && vert_vel->y > 0.0f) {
-					vert_vel->y *= -1.0f;
+			if (vert_pos->y > 1.0f && vert_vel->y > 0.0f) {
+				vert_pos->y = 1.0f;
+				vert_vel->y *= -1.0f;
 			}
 			
 			
 			vert_pos->z += vert_vel->z;
 			if (vert_pos->z < 0.0f && vert_vel->z < 0.0f) {
-					vert_vel->z *= -1.0f;
+				vert_pos->z = 0.0f;
+				vert_vel->z *= -1.0f;
 			}
-			if (vert_pos->z > ver_res && vert_vel->z > 0.0f) {
-					vert_vel->z *= -1.0f;
+			if (vert_pos->z > 1.0f && vert_vel->z > 0.0f) {
+				vert_pos->z = 1.0f;
+				vert_vel->z *= -1.0f;
 			}
 		}
 		
@@ -315,13 +397,13 @@ int main() {
 			
 			triangle_t tmp = (triangle_t) {
 				
-				test_vert_list_pos[(i * 3) + 0],
-				test_vert_list_pos[(i * 3) + 1],
-				test_vert_list_pos[(i * 3) + 2]
+				test_vert_list[(i * 3) + 0],
+				test_vert_list[(i * 3) + 1],
+				test_vert_list[(i * 3) + 2]
 				
 			};
 			
-			draw_triangle(pixel_buffer, depth_buffer, hor_res, ver_res, tmp, tri_colors[i]);
+			draw_triangle(pixel_buffer, depth_buffer, hor_res, ver_res, tmp);
 			
 		}
 		
@@ -340,7 +422,7 @@ int main() {
 		printf("Frame %d: %g\n", frame_count, (float)(end - start) / (float) CLOCKS_PER_SEC);
 		
 		
-		if (frame_count > 360) loop = 0;
+		if (frame_count > 30) loop = 0;
 
 	}
 
