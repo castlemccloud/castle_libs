@@ -14,6 +14,21 @@ typedef struct {
 	float x, y, z;
 } vec3_t;
 
+
+float vec3_dot(const vec3_t A, const vec3_t B);
+
+vec3_t vec3_cross(const vec3_t A, const vec3_t B);
+
+vec3_t vec3_scale(const vec3_t A, float s);
+
+vec3_t vec3_add(const vec3_t A, const vec3_t B);
+
+vec3_t vec3_rotate(const vec3_t A, const vec3_t B, float t);
+
+
+
+
+
 typedef struct {
 	float u, v;
 } vec2_t;

@@ -6,6 +6,39 @@
 #include <string.h>
 
 
+float vec3_dot(const vec3_t A, const vec3_t B) {
+	return (A.x * B.x) + (A.y * B.y) + (A.z * B.z);
+}
+
+vec3_t vec3_cross(const vec3_t A, const vec3_t B) {
+	return (vec3_t){((A.y * B.z) - (A.z * B.y)), 
+				   ((A.z * B.x) - (A.x * B.z)), 
+				   ((A.x * B.y) - (A.y * B.x))};
+}
+
+vec3_t vec3_scale(const vec3_t A, float s) {
+	return (vec3_t){A.x * s, A.y * s, A.z * s};
+}
+
+vec3_t vec3_add(const vec3_t A, const vec3_t B) {
+	return (vec3_t){A.x + B.x, A.y + B.y, A.z + B.z};
+}
+
+vec3_t vec3_rotate(const vec3_t A, const vec3_t B, float t) {
+	// Ru(t)x = u * DOT(u, x) + cos(t) * CROSS(CROSS(u, x), u) + sin(t) * CROSS(u, x)
+	
+	vec3_t w = vec3_cross(B, A);
+	vec3_t v = vec3_cross(w, B);
+	
+	vec3_t para = vec3_scale(B, vec3_dot(A, B));
+	
+	vec3_t vsin = vec3_scale(w, sin(t));
+	
+	vec3_t vcos = vec3_scale(v, cos(t));
+	
+	return vec3_add(para, vec3_add(vsin, vcos));
+	
+}
 
 
 
@@ -441,36 +474,6 @@ void render_model(unsigned int * pix_buf, float * depth_buf, camera_t camera, mo
 	vec3_t * vec_list = (vec3_t *) malloc(sizeof(vec3_t) * model->vec_count);
 	memcpy(vec_list, model->vec_list, sizeof(vec3_t) * model->vec_count);
 	
-	// Vertex Processing with camera data
-	
-	// Matrix Solution:
-	/*
-	
-	{
-		{
-			AR FOV Cos[roll] Cos[yaw], 
-			FOV Cos[yaw] Sin[roll],
-			-((FAR Sin[yaw])/(FAR - NEAR)),
-			-Sin[yaw]
-		}, {
-			AR FOV (-Cos[pitch] Sin[roll] + Cos[roll] Sin[pitch] Sin[yaw]), 
-			FOV (Cos[pitch] Cos[roll] + Sin[pitch] Sin[roll] Sin[yaw]), 
-			(FAR Cos[yaw] Sin[pitch])/(FAR - NEAR), 
-			Cos[yaw] Sin[pitch]
-		}, {
-			AR FOV (Sin[pitch] Sin[roll] + Cos[pitch] Cos[roll] Sin[yaw]), 
-			FOV (-Cos[roll] Sin[pitch] + Cos[pitch] Sin[roll] Sin[yaw]), 
-			(FAR Cos[pitch] Cos[yaw])/(FAR - NEAR), 
-			Cos[pitch] Cos[yaw]
-		}, {
-			-AR FOV Px,
-			-FOV Py, 
-			-((FAR NEAR)/(FAR - NEAR)) - (FAR Pz)/(FAR - NEAR),
-			-Pz
-		}
-	}
-	
-	*/
 	
 	float AR = (float) camera.hor_res / (float) camera.ver_res;
 	float FOV = camera.fov;
@@ -491,9 +494,9 @@ void render_model(unsigned int * pix_buf, float * depth_buf, camera_t camera, mo
 		
 		// Rotate based on camera orientation:
 		
-		float x_2 = (x_1 * camera.right.x) + (y_1 * camera.up.x) + (z_1 * camera.look.x);
-		float y_2 = (x_1 * camera.right.y) + (y_1 * camera.up.y) + (z_1 * camera.look.y);
-		float z_2 = (x_1 * camera.right.z) + (y_1 * camera.up.z) + (z_1 * camera.look.z);
+		float x_2 = (x_1 * camera.right.x) + (y_1 * camera.right.y) + (z_1 * camera.right.z);
+		float y_2 = (x_1 * camera.up.x) + (y_1 * camera.up.y) + (z_1 * camera.up.z);
+		float z_2 = (x_1 * camera.look.x) + (y_1 * camera.look.y) + (z_1 * camera.look.z);
 		
 		// Perform Perspective Projection
 		

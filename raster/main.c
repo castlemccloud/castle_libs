@@ -113,15 +113,17 @@ int main() {
 	
 	
 	camera_t main_camera = (camera_t) {
-		(vec3_t) {  1.0,  0.0,  0.5 },	// Position
-		(vec3_t) { -1.0,  0.0,  0.0 },	// Look
+		(vec3_t) { -1.0,  0.0,  0.0 },	// Position
+		(vec3_t) {  1.0,  0.0,  0.0 },	// Look
 		(vec3_t) {  0.0,  1.0,  0.0 },	// Up
-		(vec3_t) {  0.0,  0.0, -1.0 },	// Right
+		(vec3_t) {  0.0,  0.0,  1.0 },	// Right
 		M_PI / 2.0,
 		10.0f, 0.1f,
 		hor_res, ver_res
 	};
 	
+	float move_speed = 0.1f;
+	float look_speed = M_PI / 64.0f;
 	
 	
 	
@@ -227,18 +229,23 @@ int main() {
 						case SDLK_LEFT:
 							user_input |= look_left;
 							break;
+							
 						case SDLK_RIGHT:
 							user_input |= look_right;
 							break;
+							
 						case SDLK_UP:
 							user_input |= look_up;
 							break;
+							
 						case SDLK_DOWN:
 							user_input |= look_down;
 							break;
+							
 						case SDLK_e:
 							user_input |= roll_clock;
 							break;
+							
 						case SDLK_q:
 							user_input |= roll_counter;
 							break;
@@ -246,18 +253,23 @@ int main() {
 						case SDLK_w:
 							user_input |= move_forward;
 							break;
+							
 						case SDLK_a:
 							user_input |= move_left;
 							break;
+							
 						case SDLK_s:
 							user_input |= move_back;
 							break;
+							
 						case SDLK_d:
 							user_input |= move_right;
 							break;
+							
 						case SDLK_SPACE:
 							user_input |= move_up;
 							break;
+							
 						case SDLK_LSHIFT:
 							user_input |= move_down;
 							break;
@@ -268,24 +280,31 @@ int main() {
 					
 					break;
 					
+					
+					
 				case SDL_KEYUP:
 					
 					switch(evt.key.keysym.sym) {
 						case SDLK_LEFT:
 							user_input &= !look_left;
 							break;
+							
 						case SDLK_RIGHT:
 							user_input &= !look_right;
 							break;
+							
 						case SDLK_UP:
 							user_input &= !look_up;
 							break;
+							
 						case SDLK_DOWN:
 							user_input &= !look_down;
 							break;
+							
 						case SDLK_e:
 							user_input &= !roll_clock;
 							break;
+							
 						case SDLK_q:
 							user_input &= !roll_counter;
 							break;
@@ -293,18 +312,23 @@ int main() {
 						case SDLK_w:
 							user_input &= !move_forward;
 							break;
+							
 						case SDLK_a:
 							user_input &= !move_left;
 							break;
+							
 						case SDLK_s:
 							user_input &= !move_back;
 							break;
+							
 						case SDLK_d:
 							user_input &= !move_right;
 							break;
+							
 						case SDLK_SPACE:
 							user_input &= !move_up;
 							break;
+							
 						case SDLK_LSHIFT:
 							user_input &= !move_down;
 							break;
@@ -315,30 +339,109 @@ int main() {
 					
 					break;
 
+					
+					
 
 				default:
 					break;
 			}
 		}
 		
+		
+		vec3_t move = (vec3_t) {0.0, 0.0, 0.0};
 		if (user_input & move_forward) {
-			main_camera.pos.x += 0.1f;
+			move.x += main_camera.look.x;
+			move.y += main_camera.look.y;
+			move.z += main_camera.look.z;
 		}
 		if (user_input & move_back) {
-			main_camera.pos.x -= 0.1f;
+			move.x -= main_camera.look.x;
+			move.y -= main_camera.look.y;
+			move.z -= main_camera.look.z;
 		}
 		if (user_input & move_up) {
-			main_camera.pos.y += 0.1f;
+			move.x += main_camera.up.x;
+			move.y += main_camera.up.y;
+			move.z += main_camera.up.z;
 		}
 		if (user_input & move_down) {
-			main_camera.pos.y -= 0.1f;
+			move.x -= main_camera.up.x;
+			move.y -= main_camera.up.y;
+			move.z -= main_camera.up.z;
 		}
 		if (user_input & move_right) {
-			main_camera.pos.z += 0.1f;
+			move.x += main_camera.right.x;
+			move.y += main_camera.right.y;
+			move.z += main_camera.right.z;
 		}
 		if (user_input & move_left) {
-			main_camera.pos.z -= 0.1f;
+			move.x -= main_camera.right.x;
+			move.y -= main_camera.right.y;
+			move.z -= main_camera.right.z;
 		}
+		
+		float move_mag = sqrt((move.x * move.x) + (move.y * move.y) + (move.z * move.z));
+		if (move_mag > 0.1f) {
+			move.x *= move_speed / move_mag;
+			move.y *= move_speed / move_mag;
+			move.z *= move_speed / move_mag;
+			
+			main_camera.pos.x += move.x;
+			main_camera.pos.y += move.y;
+			main_camera.pos.z += move.z;
+		}
+		
+		
+		
+		vec3_t look = (vec3_t) {0.0, 0.0, 0.0};
+		if (user_input & look_up) {
+			look.x += main_camera.right.x;
+			look.y += main_camera.right.y;
+			look.z += main_camera.right.z;
+		}
+		if (user_input & look_down) {
+			look.x -= main_camera.right.x;
+			look.y -= main_camera.right.y;
+			look.z -= main_camera.right.z;
+		}
+		if (user_input & look_left) {
+			look.x += main_camera.up.x;
+			look.y += main_camera.up.y;
+			look.z += main_camera.up.z;
+		}
+		if (user_input & look_right) {
+			look.x -= main_camera.up.x;
+			look.y -= main_camera.up.y;
+			look.z -= main_camera.up.z;
+		}
+		if (user_input & roll_clock) {
+			look.x += main_camera.look.x;
+			look.y += main_camera.look.y;
+			look.z += main_camera.look.z;
+		}
+		if (user_input & roll_counter) {
+			look.x -= main_camera.look.x;
+			look.y -= main_camera.look.y;
+			look.z -= main_camera.look.z;
+		}
+		float look_mag = sqrt((look.x * look.x) + (look.y * look.y) + (look.z * look.z));
+		if (look_mag > 0.1f) {
+			
+			look.x /= look_mag;
+			look.y /= look_mag;
+			look.z /= look_mag;
+			
+			main_camera.look = vec3_rotate(main_camera.look, look, look_speed);
+			main_camera.up = vec3_rotate(main_camera.up, look, look_speed);
+			main_camera.right = vec3_cross(main_camera.look, main_camera.up);
+			
+		}
+		
+		printf("CAMERA:\n");
+		printf("POS  : [%g, %g, %g]\n", main_camera.pos.x, main_camera.pos.y, main_camera.pos.z);
+		printf("LOOK : [%g, %g, %g]\n", main_camera.look.x, main_camera.look.y, main_camera.look.z);
+		printf("UP   : [%g, %g, %g]\n", main_camera.up.x, main_camera.up.y, main_camera.up.z);
+		printf("RIGHT: [%g, %g, %g]\n", main_camera.right.x, main_camera.right.y, main_camera.right.z);
 		
 		
 		
@@ -372,7 +475,7 @@ int main() {
 		printf("Frame %d: %g\n", frame_count, (float)(end - start) / (float) CLOCKS_PER_SEC);
 		
 		
-		if (frame_count > 60) loop = 0;
+		//if (frame_count > 60) loop = 0;
 
 	}
 
