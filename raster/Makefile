@@ -12,7 +12,7 @@ main.o: main.c raster.h Makefile
 	$(CC) $(CFLAGS) -c $< $(CLIBS) $(SDL)
 
 raster.o: raster.c raster.h Makefile
-	$(CC) $(CFLAGS) -c $< $(CLIBS) $(SDL)
+	$(CC) $(CFLAGS) -c $< $(CLIBS)
 
 test: main.out
 	valgrind --tool=callgrind --collect-jumps=yes --dump-instr=yes ./main.out

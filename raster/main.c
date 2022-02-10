@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include <float.h>
 #include <time.h>
 
 
@@ -8,6 +9,7 @@
 #include <pthread.h>
 
 #define STB_IMAGE_IMPLEMENTATION
+#define TINYOBJLOADER_IMPLEMENTATION
 #include "raster.h"
 
 
@@ -67,90 +69,58 @@ void render_model_instance(pixel_buffer, depth_buffer, width, height, camera, mo
 
 int main() {
 	
+	clock_t total_start = clock();
+	
 	printf("Hello, World!\n");
 	srand(time(NULL));
 	
-	long hor_res = 2048;
-	long ver_res = 2048;
+	unsigned long hor_res = 2048;
+	unsigned long ver_res = 2048;
 	
-	unsigned long vertex_count = 4;
-	vertex_t vertex_list[] = {
-		(vertex_t) { 
-			(((rand() % 65536) / 32768.0f) - 1.0f), 
-			(((rand() % 65536) / 32768.0f) - 1.0f), 
-			(((rand() % 65536) / 65536.0f)), 
-			(0.25f), (0.25f) 
-		},
+	vec3_t min = {0.0, 0.0, 0.0};
+	vec3_t max = {0.0, 0.0, 0.0};
+	
+	model_t * model = load_model("viking_room.obj");
+
+	for(unsigned long i = 0; i < model->vec_count; i++) {
+//		model->vec_list[i].x *= 0.01f;
+//		model->vec_list[i].y *= -0.01f;
+//		model->vec_list[i].z *= 0.01f;
 		
-		(vertex_t) { 
-			(((rand() % 65536) / 32768.0f) - 1.0f), 
-			(((rand() % 65536) / 32768.0f) - 1.0f), 
-			(((rand() % 65536) / 65536.0f)), 
-			(1.0f), (0.0f) 
-		},
+		if (min.x > model->vec_list[i].x) min.x = model->vec_list[i].x;
+		if (min.y > model->vec_list[i].y) min.y = model->vec_list[i].y;
+		if (min.z > model->vec_list[i].z) min.z = model->vec_list[i].z;
 		
-		(vertex_t) { 
-			(((rand() % 65536) / 32768.0f) - 1.0f), 
-			(((rand() % 65536) / 32768.0f) - 1.0f), 
-			(((rand() % 65536) / 65536.0f)), 
-			(0.0f), (1.0f) 
-		},
-		
-		(vertex_t) { 
-			(((rand() % 65536) / 32768.0f) - 1.0f), 
-			(((rand() % 65536) / 32768.0f) - 1.0f), 
-			(((rand() % 65536) / 65536.0f)), 
-			(0.75f), (0.75f) 
-		}
+		if (max.x < model->vec_list[i].x) max.x = model->vec_list[i].x;
+		if (max.y < model->vec_list[i].y) max.y = model->vec_list[i].y;
+		if (max.z < model->vec_list[i].z) max.z = model->vec_list[i].z;
+	}
+	
+	
+	
+	
+	
+	printf("Vec Count: %ld\n", model->vec_count);
+	printf("Tex Count: %ld\n", model->tex_count);
+	printf("Tri Count: %ld\n", model->tri_count);
+	printf("Min: [%g, %g, %g]\n", min.x, min.y, min.z);
+	printf("Max: [%g, %g, %g]\n", max.x, max.y, max.z);
+	
+	
+	
+	texture_t * texture = load_texture("viking_room.png");
+	
+	
+	
+	camera_t main_camera = (camera_t) {
+		(vec3_t) {  1.0,  0.0,  0.5 },	// Position
+		(vec3_t) { -1.0,  0.0,  0.0 },	// Look
+		(vec3_t) {  0.0,  1.0,  0.0 },	// Up
+		(vec3_t) {  0.0,  0.0, -1.0 },	// Right
+		M_PI / 2.0,
+		10.0f, 0.1f,
+		hor_res, ver_res
 	};
-	
-	vec3_t vertex_list_vel[] = {
-		(vec3_t) {
-			(((rand() % 65536) / 32768.0f) - 1.0f) * 0.01f,
-			(((rand() % 65536) / 32768.0f) - 1.0f) * 0.01f,
-			(((rand() % 65536) / 32768.0f) - 1.0f) * 0.01f
-		},
-		
-		(vec3_t) {
-			(((rand() % 65536) / 32768.0f) - 1.0f) * 0.01f,
-			(((rand() % 65536) / 32768.0f) - 1.0f) * 0.01f,
-			(((rand() % 65536) / 32768.0f) - 1.0f) * 0.01f
-		},
-		
-		(vec3_t) {
-			(((rand() % 65536) / 32768.0f) - 1.0f) * 0.01f,
-			(((rand() % 65536) / 32768.0f) - 1.0f) * 0.01f,
-			(((rand() % 65536) / 32768.0f) - 1.0f) * 0.01f
-		},
-		
-		(vec3_t) {
-			(((rand() % 65536) / 32768.0f) - 1.0f) * 0.01f,
-			(((rand() % 65536) / 32768.0f) - 1.0f) * 0.01f,
-			(((rand() % 65536) / 32768.0f) - 1.0f) * 0.01f
-		}
-		
-	};
-	
-	
-	unsigned long triangle_count = 2;
-	triangle_t triangle_list[] = {
-		(triangle_t) {0, 1, 2},
-		(triangle_t) {1, 3, 2}
-	};
-	
-	
-	model_t render_target = {
-		
-		vertex_count,
-		vertex_list,
-		
-		triangle_count,
-		triangle_list
-		
-	};
-	
-	texture_t * texture = load_texture("Cropped_Image.png");
-	
 	
 	
 	
@@ -351,52 +321,24 @@ int main() {
 			}
 		}
 		
-		for(unsigned long i = 0; i < vertex_count; i++) {
-			
-			vertex_t * vert_pos = vertex_list + i;
-			vec3_t * vert_vel = vertex_list_vel + i;
-			
-			vert_pos->x += vert_vel->x;
-			if (vert_pos->x < -1.0f && vert_vel->x < 0.0f) {
-				vert_pos->x = -1.0f;
-				vert_vel->x *= -1.0f;
-			}
-			if (vert_pos->x > 1.0f && vert_vel->x > 0.0f) {
-				vert_pos->x = 1.0f;
-				vert_vel->x *= -1.0f;
-			}
-			
-			vert_pos->y += vert_vel->y;
-			if (vert_pos->y < -1.0f && vert_vel->y < 0.0f) {
-				vert_pos->y = -1.0f;
-				vert_vel->y *= -1.0f;
-			}
-			if (vert_pos->y > 1.0f && vert_vel->y > 0.0f) {
-				vert_pos->y = 1.0f;
-				vert_vel->y *= -1.0f;
-			}
-			
-			
-			vert_pos->z += vert_vel->z;
-			if (vert_pos->z < 0.0f && vert_vel->z < 0.0f) {
-				vert_pos->z = 0.0f;
-				vert_vel->z *= -1.0f;
-			}
-			if (vert_pos->z > 1.0f && vert_vel->z > 0.0f) {
-				vert_pos->z = 1.0f;
-				vert_vel->z *= -1.0f;
-			}
+		if (user_input & move_forward) {
+			main_camera.pos.x += 0.1f;
 		}
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
+		if (user_input & move_back) {
+			main_camera.pos.x -= 0.1f;
+		}
+		if (user_input & move_up) {
+			main_camera.pos.y += 0.1f;
+		}
+		if (user_input & move_down) {
+			main_camera.pos.y -= 0.1f;
+		}
+		if (user_input & move_right) {
+			main_camera.pos.z += 0.1f;
+		}
+		if (user_input & move_left) {
+			main_camera.pos.z -= 0.1f;
+		}
 		
 		
 		
@@ -406,7 +348,7 @@ int main() {
 		
 		
 		// Clear frame:
-		for(long i = 0; i < hor_res * ver_res; i++) {
+		for(unsigned long i = 0; i < hor_res * ver_res; i++) {
 			
 			pixel_buffer[i] = 0x0;
 			depth_buffer[i] = NAN;
@@ -414,9 +356,8 @@ int main() {
 		}
 		
 		
-		
 		// Render Frame
-		render_model(pixel_buffer, depth_buffer, hor_res, ver_res, &render_target, texture);
+		render_model(pixel_buffer, depth_buffer, main_camera, model, texture);
 		
 		
 		// After rendering frame
@@ -431,7 +372,7 @@ int main() {
 		printf("Frame %d: %g\n", frame_count, (float)(end - start) / (float) CLOCKS_PER_SEC);
 		
 		
-		//if (frame_count > 30) loop = 0;
+		if (frame_count > 60) loop = 0;
 
 	}
 
@@ -443,7 +384,13 @@ int main() {
 	SDL_DestroyWindow(main_window);
 	SDL_Quit();
 	
+	
 	destroy_texture(texture);
+	destroy_model(model);
+	
+	clock_t total_end = clock();
+	
+	printf("Total Time: %g\n", (float)(total_end - total_start) / (float)CLOCKS_PER_SEC);
 	
 	return 0;
 }
